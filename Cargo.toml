@@ -1,0 +1,17 @@
+[package]
+name = "rl-game-3"
+version = "0.1.0"
+authors = ["Kiley Owen <yelikdev@gmail.com>"]
+
+[dependencies]
+log = "0.3.6"
+
+art = { path="src/art" }
+components = { path="src/components" }
+core = { path="src/core" }
+dependencies = { path="src/dependencies" }
+event = { path="src/event" }
+graphics = { path="src/graphics" }
+math = { path="src/math" }
+systems = { path="src/systems" }
+utils = { path="src/utils" }
