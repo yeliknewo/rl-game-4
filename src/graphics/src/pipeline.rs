@@ -1,7 +1,8 @@
-use gfx::{Slice, PipelineState, Encoder};
+use gfx::{Slice, PipelineState};
 use gfx::state::{Rasterizer};
 
-use ::{GlResources, GlCommandBuffer, Shaders};
+use ::{GlEncoder, GlResources};
+use shaders::{Shaders};
 
 pub type Index = u32;
 
@@ -54,16 +55,16 @@ impl Vertex {
 }
 
 pub struct Bundle {
-    slice: Slice<Resources>,
-    pso: PipelineState<Resources, pipe::Meta>,
-    data: pipe::Data<Resources>,
+    slice: Slice<GlResources>,
+    pso: PipelineState<GlResources, pipe::Meta>,
+    data: pipe::Data<GlResources>,
 }
 
 impl Bundle {
     pub fn new(
-        slice: Slice<Resources>,
-        pso: PipelineState<Resources, pipe::Meta>,
-        data: pipe::Data<Resources>,
+        slice: Slice<GlResources>,
+        pso: PipelineState<GlResources, pipe::Meta>,
+        data: pipe::Data<GlResources>,
     ) -> Bundle {
         Bundle {
             slice: slice,
@@ -72,15 +73,15 @@ impl Bundle {
         }
     }
 
-    pub fn get_data(&self) -> &pipe::Data<Resources> {
+    pub fn get_data(&self) -> &pipe::Data<GlResources> {
         &self.data
     }
 
-    pub fn get_mut_data(&mut self) -> &mut pipe::Data<Resources> {
+    pub fn get_mut_data(&mut self) -> &mut pipe::Data<GlResources> {
         &mut self.data
     }
 
-    pub fn encode(&self, encoder: &mut Encoder<Resources, CommandBuffer>) {
+    pub fn encode(&self, encoder: &mut GlEncoder) {
         encoder.draw(&self.slice, &self.pso, &self.data);
     }
 }

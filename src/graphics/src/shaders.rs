@@ -1,7 +1,7 @@
 use std::io::{BufReader, Read};
 use std::fs::{File};
 
-use ::find_folder::{Search};
+use dependencies::find_folder::{Search};
 
 #[derive(Debug)]
 pub struct Shaders {

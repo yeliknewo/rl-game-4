@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["Kiley Owen <yelikdev@gmail.com>"]
 
 [dependencies]
+log = "0.3.6"
 gfx = "0.12.1"
 
 # art = { path="../art" }

@@ -1,3 +1,7 @@
+#[macro_use]
+extern crate log;
+
+extern crate components;
 extern crate dependencies;
 extern crate event;
 extern crate graphics;

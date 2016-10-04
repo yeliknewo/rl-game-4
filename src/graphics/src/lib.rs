@@ -11,6 +11,9 @@ pub mod rl_glutin;
 pub mod rl_sdl2;
 pub mod shaders;
 
+pub use pipeline::{Bundle, make_shaders, Packet, pipe};
+pub use shaders::{Shaders};
+
 pub type GlDevice = dependencies::gfx_device_gl::Device;
 pub type GlFactory = dependencies::gfx_device_gl::Factory;
 pub type GlResources = dependencies::gfx_device_gl::Resources;
