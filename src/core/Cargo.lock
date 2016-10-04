@@ -2,12 +2,15 @@
 name = "core"
 version = "0.1.0"
 dependencies = [
+ "art 0.1.0",
+ "components 0.1.0",
  "dependencies 0.1.0",
  "event 0.1.0",
  "graphics 0.1.0",
  "log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "math 0.1.0",
  "systems 0.1.0",
+ "utils 0.1.0",
 ]
 
 [[package]]
@@ -27,6 +30,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "approx"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "art"
+version = "0.1.0"
+dependencies = [
+ "dependencies 0.1.0",
+]
 
 [[package]]
 name = "atom"
@@ -93,6 +103,15 @@ dependencies = [
 name = "color_quant"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "components"
+version = "0.1.0"
+dependencies = [
+ "dependencies 0.1.0",
+ "math 0.1.0",
+ "utils 0.1.0",
+]
 
 [[package]]
 name = "core-foundation"
@@ -373,6 +392,7 @@ version = "0.1.0"
 dependencies = [
  "dependencies 0.1.0",
  "gfx 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "utils 0.1.0",
 ]
 
@@ -761,9 +781,11 @@ dependencies = [
 name = "systems"
 version = "0.1.0"
 dependencies = [
+ "components 0.1.0",
  "dependencies 0.1.0",
  "event 0.1.0",
  "graphics 0.1.0",
+ "log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "utils 0.1.0",
 ]
 

@@ -6,7 +6,7 @@ use dependencies::gfx::traits::{Factory, FactoryExt};
 use dependencies::gfx::{Primitive};
 use dependencies::gfx::tex::{FilterMethod, SamplerInfo, WrapMode};
 use event::{BackChannel};
-use graphics::{OutColor, OutDepth, Bundle, Shaders, make_shaders, GlEncoder, GlFactory, Packet, GlTexture, pipe};
+use graphics::{OutColor, OutDepth, Bundle, Shaders, make_shaders, GlEncoder, GlFactory, Packet, GlTexture, pipe, ProjectionData, TextureData};
 use utils::{Delta};
 
 pub enum ToRender {
@@ -74,9 +74,6 @@ impl RenderSystem {
             out_depth: self.out_depth.clone(),
         };
 
-        warn!("Creating Id");
-
-
         warn!("Getting Bundles as Mutable");
         let mut bundles = Arc::get_mut(&mut self.bundles).unwrap_or_else(|| panic!("Arc Shit"));
 
@@ -92,14 +89,83 @@ impl RenderSystem {
     fn render(&mut self, arg: &RunArg, mut encoder: GlEncoder) {
         use dependencies::specs::Join;
 
-        let (render_ids, mut transforms, mut cameras, mut render_datas) = arg.fetch(|w|
+        let (render_ids, transforms, mut cameras, mut render_datas) = arg.fetch(|w|
             (
                 w.read::<RenderId>(),
-                w.write::<Transform>(),
+                w.read::<Transform>(),
                 w.write::<Camera>(),
                 w.write::<RenderData>()
             )
         );
+
+        encoder.clear(&self.out_color, [1.0, 0.0, 0.0, 1.0]);
+        encoder.clear_depth(&self.out_depth, 1.0);
+
+        let (view, proj, dirty_cam) = {
+            let mut camera = {
+                let mut camera_opt = None;
+
+                for camera in (&mut cameras).iter() {
+                    if camera.is_main() {
+                        camera_opt = Some(camera);
+                    }
+                }
+
+                camera_opt.unwrap_or_else(|| panic!("No Main Camera Entity"))
+            };
+
+            (camera.get_view(), camera.get_proj(), camera.take_dirty())
+        };
+
+        let mut datas = vec!();
+
+        for (render_id, transform, mut render_data) in (&render_ids, &transforms, &mut render_datas).iter() {
+            let mut projection_data = None;
+
+            if dirty_cam {
+                projection_data = Some(
+                    ProjectionData {
+                        model: transform.get_model().into(),
+                        view: view.into(),
+                        proj: proj.into(),
+                    }
+                );
+            }
+
+            let mut texture_data = None;
+
+            if render_data.take_dirty() {
+                texture_data = Some(
+                    TextureData {
+                        tint: render_data.get_tint(),
+                        spritesheet_rect: render_data.get_spritesheet_rect(),
+                        spritesheet_size: render_data.get_spritesheet_size(),
+                        mirror_x: render_data.get_mirror_x(),
+                        mirror_y: render_data.get_mirror_y(),
+                    }
+                );
+            }
+
+            datas.push((render_id.get_render_id_num(), render_data.get_layer(), texture_data, projection_data));
+        }
+
+        datas.sort_by_key(|k| k.1);
+
+        for data in datas {
+            let b = self.bundles.get(data.0).unwrap_or_else(|| panic!("No Bundle found"));
+
+            if let Some(texture_data) = data.2 {
+                encoder.update_constant_buffer(&b.get_data().texture_data, &texture_data);
+            }
+
+            if let Some(projection_data) = data.3 {
+                encoder.update_constant_buffer(&b.get_data().projection_data, &projection_data);
+            }
+
+            b.encode(&mut encoder);
+        }
+
+        self.back_channel.send_from(FromRender::Encoder(encoder));
     }
 
     fn process_event(&mut self, arg: &RunArg, event: ToRender) -> bool {

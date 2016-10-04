@@ -1,9 +1,12 @@
-use dependencies::glutin::{Window, WindowBuilder};
+use dependencies::glutin::{WindowBuilder};
 use dependencies::gfx_window_glutin::{self};
 
 use super::{WindowSettings, GfxWindow};
 
-pub fn build_window(window_settings: WindowSettings) -> GfxWindow<Window, ()> {
+pub type Window = ::dependencies::glutin::Window;
+pub type Extras = ();
+
+pub fn build_window(window_settings: WindowSettings) -> GfxWindow<Window, Extras> {
     let (title, width, height) = window_settings;
 
     let builder = WindowBuilder::new()

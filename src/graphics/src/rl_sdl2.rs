@@ -1,10 +1,13 @@
-use dependencies::sdl2::video::{GLContext, Window};
+use dependencies::sdl2::video::{GLContext};
 use dependencies::sdl2;
 use dependencies::gfx_window_sdl;
 
 use super::{WindowSettings, GfxWindow};
 
-pub fn build_window(window_settings: WindowSettings) -> GfxWindow<Window, GLContext> {
+pub type Window = ::dependencies::sdl2::video::Window;
+pub type Extras = GLContext;
+
+pub fn build_window(window_settings: WindowSettings) -> GfxWindow<Window, Extras> {
     let sdl = sdl2::init().unwrap_or_else(|err| panic!("Error while sdl2::init: {:?}", err));
 
     let video = sdl.video().unwrap_or_else(|err| panic!("Error while making sdl.video(): {:?}", err));

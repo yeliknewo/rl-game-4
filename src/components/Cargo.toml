@@ -10,6 +10,6 @@ authors = ["Kiley Owen <yelikdev@gmail.com>"]
 dependencies = { path="../dependencies" }
 # event = { path="../event" }
 # graphics = { path="../graphics" }
-# math = { path="../math" }
+math = { path="../math" }
 # systems = { path="../systems" }
-# utils = { path="../utils" }
+utils = { path="../utils" }
