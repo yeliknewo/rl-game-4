@@ -93,5 +93,5 @@ pub fn start() {
         }
     }
 
-    game_handle.join().unwrap_or_else(|err| panic!("Error: {:?}", err));
+    // game_handle.join().unwrap_or_else(|err| panic!("Error: {:?}", err));
 }

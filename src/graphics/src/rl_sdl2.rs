@@ -1,11 +1,12 @@
 use dependencies::sdl2::video::{GLContext};
+use dependencies::sdl2::{EventPump};
 use dependencies::sdl2;
 use dependencies::gfx_window_sdl;
 
 use super::{WindowSettings, GfxWindow};
 
 pub type Window = ::dependencies::sdl2::video::Window;
-pub type Extras = GLContext;
+pub type Extras = (GLContext, Option<EventPump>);
 
 pub fn build_window(window_settings: WindowSettings) -> GfxWindow<Window, Extras> {
     let sdl = sdl2::init().unwrap_or_else(|err| panic!("Error while sdl2::init: {:?}", err));
@@ -21,5 +22,5 @@ pub fn build_window(window_settings: WindowSettings) -> GfxWindow<Window, Extras
     let mut builder = video.window(title, width, height);
     let (window, context, device, factory, out_color, out_depth) = gfx_window_sdl::init(&mut builder);
 
-    GfxWindow::new(out_color, out_depth, device, factory, window, context)
+    GfxWindow::new(out_color, out_depth, device, factory, window, (context, None))
 }

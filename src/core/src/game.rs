@@ -1,6 +1,7 @@
 use components::{Camera, RenderData, RenderId, Transform};
 use dependencies::specs::{Planner, World};
 use dependencies::time::{precise_time_ns};
+use dependencies::cgmath::{Point3, Vector3};
 use graphics::{OutColor, OutDepth};
 use math::{OrthographicHelper};
 use systems::render::{RenderSystem};
@@ -35,7 +36,14 @@ impl Game {
 
         let renderer = RenderSystem::new(back_event_clump.take_render().unwrap(), out_color, out_depth);
 
-
+        planner.mut_world().create_now()
+            .with(Camera::new(
+                Point3::new(0.0, 0.0, 2.0),
+                Point3::new(0.0, 0.0, 0.0),
+                Vector3::new(0.0, 1.0, 0.0),
+                ortho_helper,
+                true
+            )).build();
 
         planner.add_system(
             ControlSystem::new(back_event_clump.take_control().unwrap()),

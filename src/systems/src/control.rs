@@ -4,7 +4,10 @@ use utils::{Delta};
 
 #[derive(Debug)]
 pub enum ToControl {
-
+    Up(f64),
+    Down(f64),
+    Left(f64),
+    Right(f64),
 }
 
 #[derive(Debug)]
