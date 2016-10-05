@@ -10,6 +10,7 @@ extern crate math;
 extern crate systems;
 extern crate utils;
 
+mod event_router;
 mod event_clump;
 mod game;
 mod handle_events;
@@ -24,6 +25,7 @@ use math::{OrthographicHelper};
 use systems::render::{ToRender, FromRender};
 // use systems::control::{ToControl, FromControl};
 
+use event_router::{Router};
 use event_clump::{FrontEventClump, BackEventClump};
 use game::{Game};
 

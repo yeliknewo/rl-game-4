@@ -4,15 +4,21 @@ use utils::{Delta};
 
 #[derive(Debug)]
 pub enum ToControl {
-    Up(f64),
-    Down(f64),
-    Left(f64),
-    Right(f64),
+    Up(f64, Player),
+    Down(f64, Player),
+    Left(f64, Player),
+    Right(f64, Player),
+}
+
+#[derive(Debug)]
+pub enum Player {
+    One,
+    Two,
 }
 
 #[derive(Debug)]
 pub enum FromControl {
-
+    
 }
 
 #[derive(Debug)]
