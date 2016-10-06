@@ -109,7 +109,7 @@ pub mod sdl2 {
                         axis,
                         value,
                     } => {
-                        warn!("Axis Motion");
+                        // warn!("Axis Motion");
                         match axis {
                             Axis::LeftX => {
                                 front_event_clump.get_mut_control().unwrap_or_else(|| panic!("Control was none")).send_to(if value >= 0 {
@@ -132,7 +132,7 @@ pub mod sdl2 {
                         which,
                         button,
                     } => {
-                        warn!("Button Down");
+                        // warn!("Button Down");
                         match button {
                             Button::DPadRight => {
                                 front_event_clump.get_mut_control().unwrap_or_else(|| panic!("Control was none")).send_to(MainToControl::Right(1.0, match which {
@@ -159,7 +159,7 @@ pub mod sdl2 {
                         which,
                         button,
                     } => {
-                        warn!("Button Up");
+                        // warn!("Button Up");
                         match button {
                             Button::DPadRight => {
                                 front_event_clump.get_mut_control().unwrap_or_else(|| panic!("Control was none")).send_to(MainToControl::Right(0.0, match which {
@@ -185,26 +185,24 @@ pub mod sdl2 {
                         timestamp,
                         which,
                     } => {
-                        warn!("Added, Which: {:?}", which);
+                        // warn!("Added, Which: {:?}", which);
                         if let Some(player) = Player::map_number(which) {
                             controllers.insert(which, (game_controller.open(which as u32).unwrap_or_else(|err| panic!(err)), player));
-                        } else {
-                            warn!("No new players can be added");
                         }
                     },
-                    Event::ControllerDeviceRemoved {
-                        timestamp,
-                        which,
-                    } => {
-                        warn!("Removed, Which: {:?}", which);
-                        controllers.remove(&which).unwrap_or_else(|| panic!("Removed nothing: {:?}", which));
-                    },
-                    Event::ControllerDeviceRemapped {
-                        timestamp,
-                        which,
-                    } => {
-                        warn!("Mapped, Which: {:?}", which);
-                    },
+                    // Event::ControllerDeviceRemoved {
+                    //     timestamp,
+                    //     which,
+                    // } => {
+                    //     warn!("Removed, Which: {:?}", which);
+                    //     // controllers.remove(&which).unwrap_or_else(|| panic!("Removed nothing: {:?}", which));
+                    // },
+                    // Event::ControllerDeviceRemapped {
+                    //     timestamp,
+                    //     which,
+                    // } => {
+                    //     warn!("Mapped, Which: {:?}", which);
+                    // },
                     _ => {
 
                     },

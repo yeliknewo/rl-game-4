@@ -1,17 +1,23 @@
 use dependencies::specs::{System, RunArg};
-use event::{BackChannel};
+use event::{FrontChannel, BackChannel};
 use event_enums::main_x_control::{MainToControl, MainFromControl};
+use event_enums::control_x_player::{ControlToPlayer, ControlFromPlayer};
 use utils::{Delta};
 
 #[derive(Debug)]
 pub struct ControlSystem {
-    back_channel: BackChannel<MainToControl, MainFromControl>,
+    main_back_channel: BackChannel<MainToControl, MainFromControl>,
+    player_front_channel: FrontChannel<ControlToPlayer, ControlFromPlayer>,
 }
 
 impl ControlSystem {
-    pub fn new(back_channel: BackChannel<MainToControl, MainFromControl>) -> ControlSystem {
+    pub fn new(
+        main_back_channel: BackChannel<MainToControl, MainFromControl>,
+        player_front_channel: FrontChannel<ControlToPlayer, ControlFromPlayer>
+    ) -> ControlSystem {
         ControlSystem {
-            back_channel: back_channel,
+            main_back_channel: main_back_channel,
+            player_front_channel: player_front_channel,
         }
     }
 }
