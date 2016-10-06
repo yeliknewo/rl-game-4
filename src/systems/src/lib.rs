@@ -8,10 +8,12 @@ extern crate event_enums;
 extern crate graphics;
 extern crate utils;
 
+pub mod ai;
 pub mod control;
 pub mod player;
 pub mod render;
 
+pub use self::ai::{AiSystem};
 pub use self::control::{ControlSystem};
 pub use self::player::{PlayerSystem};
 pub use self::render::{RenderSystem};
