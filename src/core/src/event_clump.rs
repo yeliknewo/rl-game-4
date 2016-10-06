@@ -1,16 +1,16 @@
 use event::{FrontChannel, BackChannel};
-use systems::control::{ToControl, FromControl};
-use systems::render::{ToRender, FromRender};
+use event_enums::main_x_control::{MainToControl, MainFromControl};
+use event_enums::main_x_render::{MainToRender, MainFromRender};
 
 pub struct BackEventClump {
-    render: Option<BackChannel<ToRender, FromRender>>,
-    control: Option<BackChannel<ToControl, FromControl>>,
+    render: Option<BackChannel<MainToRender, MainFromRender>>,
+    control: Option<BackChannel<MainToControl, MainFromControl>>,
 }
 
 impl BackEventClump {
     pub fn new(
-        render: BackChannel<ToRender, FromRender>,
-        control: BackChannel<ToControl, FromControl>
+        render: BackChannel<MainToRender, MainFromRender>,
+        control: BackChannel<MainToControl, MainFromControl>
     ) -> BackEventClump {
         BackEventClump {
             render: Some(render),
@@ -18,24 +18,24 @@ impl BackEventClump {
         }
     }
 
-    pub fn take_render(&mut self) -> Option<BackChannel<ToRender, FromRender>> {
+    pub fn take_render(&mut self) -> Option<BackChannel<MainToRender, MainFromRender>> {
         self.render.take()
     }
 
-    pub fn take_control(&mut self) -> Option<BackChannel<ToControl, FromControl>> {
+    pub fn take_control(&mut self) -> Option<BackChannel<MainToControl, MainFromControl>> {
         self.control.take()
     }
 }
 
 pub struct FrontEventClump {
-    render: Option<FrontChannel<ToRender, FromRender>>,
-    control: Option<FrontChannel<ToControl, FromControl>>,
+    render: Option<FrontChannel<MainToRender, MainFromRender>>,
+    control: Option<FrontChannel<MainToControl, MainFromControl>>,
 }
 
 impl FrontEventClump {
     pub fn new(
-        render: FrontChannel<ToRender, FromRender>,
-        control: FrontChannel<ToControl, FromControl>
+        render: FrontChannel<MainToRender, MainFromRender>,
+        control: FrontChannel<MainToControl, MainFromControl>
     ) -> FrontEventClump {
         FrontEventClump {
             render: Some(render),
@@ -59,11 +59,11 @@ impl FrontEventClump {
     //     self.control = Some(control);
     // }
 
-    pub fn get_mut_render(&mut self) -> Option<&mut FrontChannel<ToRender, FromRender>> {
+    pub fn get_mut_render(&mut self) -> Option<&mut FrontChannel<MainToRender, MainFromRender>> {
         self.render.as_mut()
     }
 
-    pub fn get_mut_control(&mut self) -> Option<&mut FrontChannel<ToControl, FromControl>> {
+    pub fn get_mut_control(&mut self) -> Option<&mut FrontChannel<MainToControl, MainFromControl>> {
         self.control.as_mut()
     }
 }

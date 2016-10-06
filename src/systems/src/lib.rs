@@ -4,6 +4,7 @@ extern crate log;
 extern crate components;
 extern crate dependencies;
 extern crate event;
+extern crate event_enums;
 extern crate graphics;
 extern crate utils;
 

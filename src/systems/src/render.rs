@@ -6,19 +6,12 @@ use dependencies::gfx::traits::{Factory, FactoryExt};
 use dependencies::gfx::{Primitive};
 use dependencies::gfx::tex::{FilterMethod, SamplerInfo, WrapMode};
 use event::{BackChannel};
+use event_enums::main_x_render::{MainToRender, MainFromRender};
 use graphics::{OutColor, OutDepth, Bundle, Shaders, make_shaders, GlEncoder, GlFactory, Packet, GlTexture, pipe, ProjectionData, TextureData};
 use utils::{Delta};
 
-pub enum ToRender {
-    Encoder(GlEncoder),
-}
-
-pub enum FromRender {
-    Encoder(GlEncoder),
-}
-
 pub struct RenderSystem {
-    back_channel: BackChannel<ToRender, FromRender>,
+    back_channel: BackChannel<MainToRender, MainFromRender>,
     out_color: OutColor,
     out_depth: OutDepth,
     bundles: Arc<Vec<Bundle>>,
@@ -26,7 +19,7 @@ pub struct RenderSystem {
 }
 
 impl RenderSystem {
-    pub fn new(back_channel: BackChannel<ToRender, FromRender>, out_color: OutColor, out_depth: OutDepth) -> RenderSystem {
+    pub fn new(back_channel: BackChannel<MainToRender, MainFromRender>, out_color: OutColor, out_depth: OutDepth) -> RenderSystem {
         RenderSystem {
             back_channel: back_channel,
             out_color: out_color,
@@ -165,12 +158,12 @@ impl RenderSystem {
             b.encode(&mut encoder);
         }
 
-        self.back_channel.send_from(FromRender::Encoder(encoder));
+        self.back_channel.send_from(MainFromRender::Encoder(encoder));
     }
 
-    fn process_event(&mut self, arg: &RunArg, event: ToRender) -> bool {
+    fn process_event(&mut self, arg: &RunArg, event: MainToRender) -> bool {
         match event {
-            ToRender::Encoder(encoder) => {
+            MainToRender::Encoder(encoder) => {
                 self.render(arg, encoder);
                 false
             },

@@ -12,6 +12,7 @@ gfx = "0.12.1"
 # core = { path="../core" }
 dependencies = { path="../dependencies" }
 # event = { path="../event" }
+# event_enums = { path="../event_enums" }
 # graphics = { path="../graphics" }
 # math = { path="../math" }
 # systems = { path="../systems" }

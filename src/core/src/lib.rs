@@ -5,12 +5,12 @@ extern crate art;
 extern crate components;
 extern crate dependencies;
 extern crate event;
+extern crate event_enums;
 extern crate graphics;
 extern crate math;
 extern crate systems;
 extern crate utils;
 
-mod event_router;
 mod event_clump;
 mod game;
 mod handle_events;
@@ -19,13 +19,12 @@ use std::thread;
 
 use dependencies::gfx::{Device};
 use event::{two_way_channel};
+use event_enums::main_x_render::{MainToRender, MainFromRender};
 use graphics::{GlEncoder};
 use graphics::rl_sdl2::{build_window};
 use math::{OrthographicHelper};
-use systems::render::{ToRender, FromRender};
 // use systems::control::{ToControl, FromControl};
 
-use event_router::{Router};
 use event_clump::{FrontEventClump, BackEventClump};
 use game::{Game};
 
@@ -53,8 +52,8 @@ pub fn start() {
 
     let encoder: GlEncoder = gfx_window.get_mut_factory().create_command_buffer().into();
 
-    render_event_core.send_to(ToRender::Encoder(encoder.clone_empty()));
-    render_event_core.send_to(ToRender::Encoder(encoder));
+    render_event_core.send_to(MainToRender::Encoder(encoder.clone_empty()));
+    render_event_core.send_to(MainToRender::Encoder(encoder));
 
     let mut front_event_clump = FrontEventClump::new(render_event_core, control_event_core);
 
@@ -75,13 +74,13 @@ pub fn start() {
     'main: loop {
         if let Some(event) = front_event_clump.get_mut_render().unwrap().try_recv_from() {
             match event {
-                FromRender::Encoder(mut encoder) => {
+                MainFromRender::Encoder(mut encoder) => {
                     if handle_events::sdl2::handle_events(&mut gfx_window, &mut front_event_clump) {
                         break 'main;
                     }
 
                     encoder.flush(gfx_window.get_mut_device());
-                    front_event_clump.get_mut_render().unwrap().send_to(ToRender::Encoder(encoder));
+                    front_event_clump.get_mut_render().unwrap().send_to(MainToRender::Encoder(encoder));
                     gfx_window.get_mut_window().gl_swap_window();
                     gfx_window.get_mut_device().cleanup();
                 }

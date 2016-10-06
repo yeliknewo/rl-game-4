@@ -1,33 +1,15 @@
 use dependencies::specs::{System, RunArg};
 use event::{BackChannel};
+use event_enums::main_x_control::{MainToControl, MainFromControl};
 use utils::{Delta};
 
 #[derive(Debug)]
-pub enum ToControl {
-    Up(f64, Player),
-    Down(f64, Player),
-    Left(f64, Player),
-    Right(f64, Player),
-}
-
-#[derive(Debug)]
-pub enum Player {
-    One,
-    Two,
-}
-
-#[derive(Debug)]
-pub enum FromControl {
-    
-}
-
-#[derive(Debug)]
 pub struct ControlSystem {
-    back_channel: BackChannel<ToControl, FromControl>,
+    back_channel: BackChannel<MainToControl, MainFromControl>,
 }
 
 impl ControlSystem {
-    pub fn new(back_channel: BackChannel<ToControl, FromControl>) -> ControlSystem {
+    pub fn new(back_channel: BackChannel<MainToControl, MainFromControl>) -> ControlSystem {
         ControlSystem {
             back_channel: back_channel,
         }

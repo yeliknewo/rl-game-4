@@ -1,18 +1,16 @@
 [package]
-name = "utils"
+name = "event_enums"
 version = "0.1.0"
-authors = ["Kiley Owen <yelikdev@gmail.com>"]
+authors = ["Kiley Owen"]
 
 [dependencies]
-log = "0.3.6"
-
 # art = { path="../art" }
 # components = { path="../components" }
 # core = { path="../core" }
 dependencies = { path="../dependencies" }
 # event = { path="../event" }
 # event_enums = { path="../event_enums" }
-# graphics = { path="../graphics" }
+graphics = { path="../graphics" }
 # math = { path="../math" }
 # systems = { path="../systems" }
-# utils = { path="../utils" }
+utils = { path="../utils" }
