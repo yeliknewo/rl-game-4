@@ -11,7 +11,7 @@ pub mod rl_glutin;
 pub mod rl_sdl2;
 pub mod shaders;
 
-pub use pipeline::{Bundle, make_shaders, Packet, pipe, ProjectionData, TextureData};
+pub use pipeline::{Vertex, Bundle, make_shaders, Packet, pipe, ProjectionData, TextureData};
 pub use shaders::{Shaders};
 
 pub type GlDevice = dependencies::gfx_device_gl::Device;
