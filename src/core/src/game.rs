@@ -1,5 +1,5 @@
 use art::{make_square_render, main, layers};
-use components::{Camera, RenderData, RenderId, Transform};
+use components::{Camera, CompMoving, CompPlayer, RenderData, RenderId, Transform};
 use dependencies::specs::{Planner, World};
 use dependencies::time::{precise_time_ns};
 use dependencies::cgmath::{Rad, Euler, Point3, Vector3};
@@ -8,11 +8,7 @@ use event::{BackChannel, two_way_channel};
 use event_enums::main_x_game::{MainToGame, MainFromGame};
 use graphics::{OutColor, OutDepth, GlFactory, load_texture};
 use math::{OrthographicHelper};
-use systems::ai::{AiSystem};
-use systems::feeder::{FeederSystem};
-use systems::player::{PlayerSystem};
-use systems::render::{RenderSystem};
-use systems::control::{ControlSystem};
+use systems::{AiSystem, FeederSystem, PlayerSystem, RenderSystem, ControlSystem};
 use utils::{Delta, FpsCounter};
 
 use event_clump::{BackEventClump};
@@ -36,6 +32,8 @@ impl Game {
             let mut world = World::new();
 
             world.register::<Camera>();
+            world.register::<CompMoving>();
+            world.register::<CompPlayer>();
             world.register::<RenderData>();
             world.register::<RenderId>();
             world.register::<Transform>();
