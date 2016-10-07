@@ -8,8 +8,8 @@ use event::{BackChannel, two_way_channel};
 use event_enums::main_x_game::{MainToGame, MainFromGame};
 use graphics::{OutColor, OutDepth, GlFactory, load_texture};
 use math::{OrthographicHelper};
-use systems::{AiSystem, FeederSystem, PlayerSystem, RenderSystem, ControlSystem};
-use utils::{Delta, FpsCounter};
+use systems::{AiSystem, FeederSystem, PlayerSystem, RenderSystem, ControlSystem, MovingSystem};
+use utils::{Delta, FpsCounter, Player};
 
 use event_clump::{BackEventClump};
 
@@ -71,6 +71,8 @@ impl Game {
         };
 
         planner.mut_world().create_now()
+            .with(CompMoving::new(Vector3::new(0.0, 0.0, 0.0)))
+            .with(CompPlayer::new(Player::One))
             .with(Transform::new(Vector3::new(0.0, 0.0, 0.0), Euler::new(Rad(0.0), Rad(0.0), Rad(0.0)), Vector3::new(1.0, 1.0, 1.0)))
             .with(main_render)
             .with(RenderData::new(layers::PLAYER, *main::DEFAULT_TINT, main::PLAYER_1_STAND, main::SIZE))
@@ -104,6 +106,12 @@ impl Game {
             PlayerSystem::new(control_to_player_back_channel),
             "player",
             20
+        );
+
+        planner.add_system(
+            MovingSystem::new(),
+            "moving",
+            15
         );
 
         planner.add_system(

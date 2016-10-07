@@ -6,14 +6,14 @@ pub mod fps_counter;
 pub use fps_counter::FpsCounter;
 
 pub type Delta = f64;
-pub type Coord = f64;
+pub type Coord = f32;
 pub type CoordI = i64;
 pub type GfxCoord = f32;
 
 // #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 // pub struct WindowId(pub u32);
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Player {
     One,
     Two,

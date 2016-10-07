@@ -115,7 +115,7 @@ impl RenderSystem {
         for (render_id, transform, mut render_data) in (&render_ids, &transforms, &mut render_datas).iter() {
             let mut projection_data = None;
 
-            if dirty_cam {
+            if dirty_cam || true {
                 projection_data = Some(
                     ProjectionData {
                         model: transform.get_model().into(),
