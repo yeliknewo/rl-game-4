@@ -4,6 +4,9 @@ use dependencies::time::{precise_time_ns};
 use dependencies::cgmath::{Point3, Vector3};
 use graphics::{OutColor, OutDepth};
 use math::{OrthographicHelper};
+use systems::ai::{AiSystem};
+use systems::feeder::{FeederSystem};
+use systems::player::{PlayerSystem};
 use systems::render::{RenderSystem};
 use systems::control::{ControlSystem};
 use utils::{Delta, FpsCounter};
@@ -46,10 +49,28 @@ impl Game {
             )).build();
 
         planner.add_system(
+            FeederSystem::new(),
+            "feeder",
+            50
+        );
+
+        planner.add_system(
+            AiSystem::new(),
+            "ai",
+            40
+        );
+
+        planner.add_system(
             ControlSystem::new(back_event_clump.take_control().unwrap()),
             "control",
             30
         );
+
+        planner.add_system{
+            PlayerSystem::new(),
+            "player",
+            20
+        };
 
         planner.add_system(
             renderer,
