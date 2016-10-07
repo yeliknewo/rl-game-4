@@ -2,6 +2,8 @@ use components::{Camera, RenderData, RenderId, Transform};
 use dependencies::specs::{Planner, World};
 use dependencies::time::{precise_time_ns};
 use dependencies::cgmath::{Point3, Vector3};
+use event::{BackChannel, two_way_channel};
+use event_enums::main_x_game::{MainToGame, MainFromGame};
 use graphics::{OutColor, OutDepth};
 use math::{OrthographicHelper};
 use systems::ai::{AiSystem};
@@ -17,6 +19,7 @@ pub struct Game {
     planner: Planner<Delta>,
     last_time: u64,
     fps_counter: FpsCounter,
+    main_back_channel: BackChannel<MainToGame, MainFromGame>,
 }
 
 impl Game {
@@ -37,7 +40,7 @@ impl Game {
             Planner::<Delta>::new(world, 8)
         };
 
-        let renderer = RenderSystem::new(back_event_clump.take_render().unwrap(), out_color, out_depth);
+        let renderer = RenderSystem::new(back_event_clump.take_render().unwrap_or_else(|| panic!("Render was none")), out_color, out_depth);
 
         planner.mut_world().create_now()
             .with(Camera::new(
@@ -48,29 +51,35 @@ impl Game {
                 true
             )).build();
 
+        let (feeder_to_ai_front_channel, feeder_to_ai_back_channel) = two_way_channel();
+
         planner.add_system(
-            FeederSystem::new(),
+            FeederSystem::new(feeder_to_ai_front_channel),
             "feeder",
             50
         );
 
+        let (ai_to_control_front_channel, ai_to_control_back_channel) = two_way_channel();
+
         planner.add_system(
-            AiSystem::new(),
+            AiSystem::new(feeder_to_ai_back_channel, ai_to_control_front_channel),
             "ai",
             40
         );
 
+        let (control_to_player_front_channel, control_to_player_back_channel) = two_way_channel();
+
         planner.add_system(
-            ControlSystem::new(back_event_clump.take_control().unwrap()),
+            ControlSystem::new(back_event_clump.take_control().unwrap_or_else(|| panic!("Control was none")), ai_to_control_back_channel, control_to_player_front_channel),
             "control",
             30
         );
 
-        planner.add_system{
-            PlayerSystem::new(),
+        planner.add_system(
+            PlayerSystem::new(control_to_player_back_channel),
             "player",
             20
-        };
+        );
 
         planner.add_system(
             renderer,
@@ -82,6 +91,7 @@ impl Game {
             planner: planner,
             last_time: precise_time_ns(),
             fps_counter: FpsCounter::new(),
+            main_back_channel: back_event_clump.take_game().unwrap_or_else(|| panic!("Game was none")),
         }
     }
 
@@ -92,6 +102,12 @@ impl Game {
 
         self.planner.dispatch(delta);
         self.fps_counter.frame(delta);
+
+        while let Some(event) = self.main_back_channel.try_recv_to() {
+            match event {
+                MainToGame::Exit => return false,
+            }
+        }
 
         true
     }

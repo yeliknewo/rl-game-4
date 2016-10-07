@@ -3,7 +3,7 @@ pub mod glutin {
     use graphics::rl_glutin::{Window, Extras};
     use event_clump::{FrontEventClump};
 
-    #[allow(dead_code)]
+    #[allow(dead_code, unused_variables)]
     pub fn handle_events(gfx_window: &mut GfxWindow<Window, Extras>, front_event_clump: &mut FrontEventClump) -> bool {
         false
     }
@@ -20,7 +20,7 @@ pub mod sdl2 {
     use utils::{Player};
     use event_clump::{FrontEventClump};
 
-    #[allow(dead_code)]
+    #[allow(dead_code, unused_variables)]
     pub fn handle_events(gfx_window: &mut GfxWindow<Window, Extras>, front_event_clump: &mut FrontEventClump) -> bool {
         let mut event_pump = gfx_window.get_mut_extras().1.take().unwrap_or_else(|| panic!("Event Pump was None"));
         let game_controller = gfx_window.get_mut_extras().2.take().unwrap_or_else(|| panic!("Game Controller Subsystem was None"));

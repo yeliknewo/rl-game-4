@@ -46,15 +46,19 @@ impl ControlSystem {
 
 impl System<Delta> for ControlSystem {
     fn run(&mut self, arg: RunArg, _: Delta) {
-        let needs_fetch = true;
+        let mut needs_fetch = (true, true);
 
-        while needs_fetch {
+        while needs_fetch.0 || needs_fetch.1 {
             if let Some(event) = self.main_back_channel.try_recv_to() {
                 self.process_main_event(event);
+            } else {
+                needs_fetch.0 = false;
             }
 
             if let Some(event) = self.ai_back_channel.try_recv_to() {
                 self.process_ai_event(event);
+            } else {
+                needs_fetch.1 = false;
             }
         }
 
