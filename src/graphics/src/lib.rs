@@ -10,9 +10,11 @@ pub mod pipeline;
 pub mod rl_glutin;
 pub mod rl_sdl2;
 pub mod shaders;
+pub mod texture;
 
 pub use pipeline::{Vertex, Bundle, make_shaders, Packet, pipe, ProjectionData, TextureData};
 pub use shaders::{Shaders};
+pub use texture::{load_texture};
 
 pub type GlDevice = dependencies::gfx_device_gl::Device;
 pub type GlFactory = dependencies::gfx_device_gl::Factory;

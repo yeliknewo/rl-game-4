@@ -61,12 +61,16 @@ pub fn start() {
         render_event_core.send_to(MainToRender::Encoder(encoder));
     }
 
+    let out_color = gfx_window.get_out_color().clone();
+    let out_depth = gfx_window.get_out_depth().clone();
+
     // warn!("Making Game");
     let game = Game::new(
+        gfx_window.get_mut_factory(),
         back_event_clump,
         ortho_helper,
-        gfx_window.get_out_color().clone(),
-        gfx_window.get_out_depth().clone()
+        out_color,
+        out_depth,
     );
 
     // warn!("Making Game Thread");

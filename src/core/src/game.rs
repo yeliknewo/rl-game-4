@@ -1,10 +1,12 @@
+use art::{make_square_render, main, layers};
 use components::{Camera, RenderData, RenderId, Transform};
 use dependencies::specs::{Planner, World};
 use dependencies::time::{precise_time_ns};
-use dependencies::cgmath::{Point3, Vector3};
+use dependencies::cgmath::{Rad, Euler, Point3, Vector3};
+use dependencies::find_folder::{Search};
 use event::{BackChannel, two_way_channel};
 use event_enums::main_x_game::{MainToGame, MainFromGame};
-use graphics::{OutColor, OutDepth};
+use graphics::{OutColor, OutDepth, GlFactory, load_texture};
 use math::{OrthographicHelper};
 use systems::ai::{AiSystem};
 use systems::feeder::{FeederSystem};
@@ -24,6 +26,7 @@ pub struct Game {
 
 impl Game {
     pub fn new(
+        factory: &mut GlFactory,
         mut back_event_clump: BackEventClump,
         ortho_helper: OrthographicHelper,
         out_color: OutColor,
@@ -40,7 +43,7 @@ impl Game {
             Planner::<Delta>::new(world, 8)
         };
 
-        let renderer = RenderSystem::new(back_event_clump.take_render().unwrap_or_else(|| panic!("Render was none")), out_color, out_depth);
+        let mut renderer = RenderSystem::new(back_event_clump.take_render().unwrap_or_else(|| panic!("Render was none")), out_color, out_depth);
 
         planner.mut_world().create_now()
             .with(Camera::new(
@@ -50,6 +53,30 @@ impl Game {
                 ortho_helper,
                 true
             )).build();
+
+        let packet = make_square_render();
+
+        let assets = Search::ParentsThenKids(5, 3).for_folder("assets").unwrap_or_else(|err| panic!(err));
+
+        let main_render = {
+            let texture = load_texture(
+                factory,
+                assets.join(
+                    main::NAME
+                )
+            );
+            renderer.add_render(
+                factory,
+                &packet,
+                texture
+            )
+        };
+
+        planner.mut_world().create_now()
+            .with(Transform::new(Vector3::new(0.0, 0.0, 0.0), Euler::new(Rad(0.0), Rad(0.0), Rad(0.0)), Vector3::new(1.0, 1.0, 1.0)))
+            .with(main_render)
+            .with(RenderData::new(layers::PLAYER, *main::DEFAULT_TINT, main::PLAYER_1_STAND, main::SIZE))
+            .build();
 
         let (feeder_to_ai_front_channel, feeder_to_ai_back_channel) = two_way_channel();
 
