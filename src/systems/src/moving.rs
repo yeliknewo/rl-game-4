@@ -27,9 +27,6 @@ impl System<Delta> for MovingSystem {
             transform.add_pos(moving.get_velocity().clone() * delta_time as Coord);
 
             *moving.get_mut_velocity() *= FRICTION;
-
-            warn!("Current Velocity: {:?}", moving.get_velocity());
-            warn!("Current Position: {:?}", transform.get_pos());
         }
     }
 }

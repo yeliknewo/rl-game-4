@@ -1,6 +1,6 @@
 use utils::{Player};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ControlToPlayer {
     Up(f64, Player),
     Down(f64, Player),

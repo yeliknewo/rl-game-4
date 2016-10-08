@@ -74,8 +74,16 @@ impl Game {
             .with(CompMoving::new(Vector3::new(0.0, 0.0, 0.0)))
             .with(CompPlayer::new(Player::One))
             .with(Transform::new(Vector3::new(0.0, 0.0, 0.0), Euler::new(Rad(0.0), Rad(0.0), Rad(0.0)), Vector3::new(1.0, 1.0, 1.0)))
-            .with(main_render)
+            .with(main_render.clone())
             .with(RenderData::new(layers::PLAYER, *main::DEFAULT_TINT, main::PLAYER_1_STAND, main::SIZE))
+            .build();
+
+        planner.mut_world().create_now()
+            .with(CompMoving::new(Vector3::new(0.0, 0.0, 0.0)))
+            .with(CompPlayer::new(Player::Two))
+            .with(Transform::new(Vector3::new(0.0, 0.0, 0.0), Euler::new(Rad(0.0), Rad(0.0), Rad(0.0)), Vector3::new(1.0, 1.0, 1.0)))
+            .with(main_render.clone())
+            .with(RenderData::new(layers::PLAYER, [1.0, 0.0, 0.0, 1.0], main::PLAYER_1_STAND, main::SIZE))
             .build();
 
         let (feeder_to_ai_front_channel, feeder_to_ai_back_channel) = two_way_channel();

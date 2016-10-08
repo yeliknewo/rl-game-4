@@ -44,4 +44,5 @@ pub mod main {
     pub const ID: RenderType = 0;
 
     pub const PLAYER_1_STAND: Sprite = &[0.0, 0.0, 32.0, 31.5];
+    pub const TEST: Sprite = &[0.0, 0.0, 1.0, 0.5];
 }

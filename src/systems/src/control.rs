@@ -1,15 +1,25 @@
+use std::collections::{HashMap};
 use dependencies::specs::{System, RunArg};
 use event::{FrontChannel, BackChannel};
 use event_enums::ai_x_control::{AiToControl, AiFromControl};
 use event_enums::main_x_control::{MainToControl, MainFromControl};
 use event_enums::control_x_player::{ControlToPlayer, ControlFromPlayer};
-use utils::{Delta};
+use utils::{Delta, Player};
 
 #[derive(Debug)]
 pub struct ControlSystem {
     main_back_channel: BackChannel<MainToControl, MainFromControl>,
     ai_back_channel: BackChannel<AiToControl, AiFromControl>,
-    player_front_channel: FrontChannel<ControlToPlayer, ControlFromPlayer>,
+    player_front_channel: Option<FrontChannel<ControlToPlayer, ControlFromPlayer>>,
+    repeat_map: HashMap<RepeatEvent, ControlToPlayer>,
+}
+
+#[derive(Debug, Hash, Eq, PartialEq)]
+enum RepeatEvent {
+    Up(Player),
+    Down(Player),
+    Left(Player),
+    Right(Player),
 }
 
 impl ControlSystem {
@@ -21,26 +31,48 @@ impl ControlSystem {
         ControlSystem {
             main_back_channel: main_back_channel,
             ai_back_channel: ai_back_channel,
-            player_front_channel: player_front_channel,
+            player_front_channel: Some(player_front_channel),
+            repeat_map: HashMap::new(),
         }
     }
 
     fn process_main_event(&mut self, event: MainToControl) {
         match event {
-            MainToControl::Up(amount, player) => self.player_front_channel.send_to(ControlToPlayer::Up(amount, player)),
-            MainToControl::Down(amount, player) => self.player_front_channel.send_to(ControlToPlayer::Down(amount, player)),
-            MainToControl::Left(amount, player) => self.player_front_channel.send_to(ControlToPlayer::Left(amount, player)),
-            MainToControl::Right(amount, player) => self.player_front_channel.send_to(ControlToPlayer::Right(amount, player)),
+            MainToControl::Up(amount, player) => self.send_repeat(ControlToPlayer::Up(amount, player)),
+            MainToControl::Down(amount, player) => self.send_repeat(ControlToPlayer::Down(amount, player)),
+            MainToControl::Left(amount, player) => self.send_repeat(ControlToPlayer::Left(amount, player)),
+            MainToControl::Right(amount, player) => self.send_repeat(ControlToPlayer::Right(amount, player)),
         }
     }
 
     fn process_ai_event(&mut self, event: AiToControl) {
         match event {
-            AiToControl::Up(amount, player) => self.player_front_channel.send_to(ControlToPlayer::Up(amount, player)),
-            AiToControl::Down(amount, player) => self.player_front_channel.send_to(ControlToPlayer::Down(amount, player)),
-            AiToControl::Left(amount, player) => self.player_front_channel.send_to(ControlToPlayer::Left(amount, player)),
-            AiToControl::Right(amount, player) => self.player_front_channel.send_to(ControlToPlayer::Right(amount, player)),
+            AiToControl::Up(amount, player) => self.send_once(ControlToPlayer::Up(amount, player)),
+            AiToControl::Down(amount, player) => self.send_once(ControlToPlayer::Down(amount, player)),
+            AiToControl::Left(amount, player) => self.send_once(ControlToPlayer::Left(amount, player)),
+            AiToControl::Right(amount, player) => self.send_once(ControlToPlayer::Right(amount, player)),
         }
+    }
+
+    fn send_repeat(&mut self, event: ControlToPlayer) {
+        match &event {
+            &ControlToPlayer::Up(_, player) => self.repeat_map.insert(RepeatEvent::Up(player), event),
+            &ControlToPlayer::Down(_, player) => self.repeat_map.insert(RepeatEvent::Down(player), event),
+            &ControlToPlayer::Right(_, player) => self.repeat_map.insert(RepeatEvent::Right(player), event),
+            &ControlToPlayer::Left(_, player) => self.repeat_map.insert(RepeatEvent::Left(player), event),
+        };
+    }
+
+    fn send_once(&mut self, event: ControlToPlayer) {
+        self.player_front_channel.as_mut().unwrap_or_else(|| panic!("Player Front Channel was none")).send_to(event);
+    }
+
+    fn trigger_repeats(&mut self) {
+        let mut channel = self.player_front_channel.take().unwrap_or_else(|| panic!("Player Front Channel was none"));
+        for value in self.repeat_map.values() {
+            channel.send_to(value.clone());
+        }
+        self.player_front_channel = Some(channel);
     }
 }
 
@@ -61,6 +93,8 @@ impl System<Delta> for ControlSystem {
                 needs_fetch.1 = false;
             }
         }
+
+        self.trigger_repeats();
 
         arg.fetch(|_| ());
     }

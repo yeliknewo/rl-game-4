@@ -9,7 +9,6 @@ pub struct RenderData {
     mirror_x: bool,
     mirror_y: bool,
     dirty_1: bool,
-    dirty_2: bool,
 }
 
 impl RenderData {
@@ -22,7 +21,6 @@ impl RenderData {
             mirror_x: false,
             mirror_y: false,
             dirty_1: true,
-            dirty_2: true,
         }
     }
 
@@ -83,16 +81,14 @@ impl RenderData {
 
     fn set_dirty(&mut self) {
         self.dirty_1 = true;
-        self.dirty_2 = true;
     }
 
     pub fn take_dirty(&mut self) -> bool {
-        self.dirty_1 = false;
-        if self.dirty_2 {
-            self.dirty_2 = false;
-            return true;
+        if self.dirty_1 {
+            self.dirty_1 = false;
+            true
         } else {
-            return false;
+            false
         }
     }
 }

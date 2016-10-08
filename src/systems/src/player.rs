@@ -26,7 +26,6 @@ impl System<Delta> for PlayerSystem {
         ));
 
         while let Some(event) = self.control_back_channel.try_recv_to() {
-            warn!("Player Got Event");
             match event {
                 ControlToPlayer::Right(amount, player_evt) => {
                     for(player, mut moving) in (&players, &mut movings).iter() {

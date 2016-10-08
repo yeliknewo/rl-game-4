@@ -22,7 +22,7 @@ impl AiSystem {
 
     fn process_event(&mut self, event: FeederToAi) {
         match event {
-            _ => self.control_front_channel.send_to(AiToControl::Right(1.0, Player::One)),
+            FeederToAi::PlayerPosition(player, position) => self.control_front_channel.send_to(AiToControl::Right(1.0, player)),
         }
     }
 }

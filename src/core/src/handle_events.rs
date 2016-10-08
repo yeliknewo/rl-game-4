@@ -114,11 +114,15 @@ pub mod sdl2 {
                             Axis::LeftX => {
                                 front_event_clump.get_mut_control().unwrap_or_else(|| panic!("Control was none")).send_to(if value >= 0 {
                                     MainToControl::Right((value / ::std::i16::MAX) as f64, match which {
-                                        _ => Player::One,
+                                        0 => Player::One,
+                                        1 => Player::Two,
+                                        _ => continue,
                                     })
                                 } else {
                                     MainToControl::Left((value / ::std::i16::MIN).abs() as f64, match which {
-                                        _ => Player::One,
+                                        0 => Player::One,
+                                        1 => Player::Two,
+                                        _ => continue,
                                     })
                                 });
                             },
@@ -136,17 +140,37 @@ pub mod sdl2 {
                         match button {
                             Button::DPadRight => {
                                 front_event_clump.get_mut_control().unwrap_or_else(|| panic!("Control was none")).send_to(MainToControl::Right(1.0, match which {
-                                    _ => Player::One,
+                                    0 => Player::One,
+                                    1 => Player::Two,
+                                    _ => continue,
                                 }));
                             },
                             Button::DPadLeft => {
                                 front_event_clump.get_mut_control().unwrap_or_else(|| panic!("Control was none")).send_to(MainToControl::Left(1.0, match which {
-                                    _ => Player::One,
+                                    0 => Player::One,
+                                    1 => Player::Two,
+                                    _ => continue,
+                                }));
+                            },
+                            Button::DPadUp => {
+                                front_event_clump.get_mut_control().unwrap_or_else(|| panic!("Control was none")).send_to(MainToControl::Up(1.0, match which {
+                                    0 => Player::One,
+                                    1 => Player::Two,
+                                    _ => continue,
+                                }));
+                            },
+                            Button::DPadDown => {
+                                front_event_clump.get_mut_control().unwrap_or_else(|| panic!("Control was none")).send_to(MainToControl::Down(1.0, match which {
+                                    0 => Player::One,
+                                    1 => Player::Two,
+                                    _ => continue,
                                 }));
                             },
                             Button::A => {
                                 front_event_clump.get_mut_control().unwrap_or_else(|| panic!("Control was none")).send_to(MainToControl::Up(1.0, match which {
-                                    _ => Player::One,
+                                    0 => Player::One,
+                                    1 => Player::Two,
+                                    _ => continue,
                                 }));
                             }
                             _ => {
@@ -159,21 +183,40 @@ pub mod sdl2 {
                         which,
                         button,
                     } => {
-                        // warn!("Button Up");
                         match button {
                             Button::DPadRight => {
                                 front_event_clump.get_mut_control().unwrap_or_else(|| panic!("Control was none")).send_to(MainToControl::Right(0.0, match which {
-                                    _ => Player::One,
+                                    0 => Player::One,
+                                    1 => Player::Two,
+                                    _ => continue,
                                 }));
                             },
                             Button::DPadLeft => {
                                 front_event_clump.get_mut_control().unwrap_or_else(|| panic!("Control was none")).send_to(MainToControl::Left(0.0, match which {
-                                    _ => Player::One,
+                                    0 => Player::One,
+                                    1 => Player::Two,
+                                    _ => continue,
+                                }));
+                            },
+                            Button::DPadUp => {
+                                front_event_clump.get_mut_control().unwrap_or_else(|| panic!("Control was none")).send_to(MainToControl::Up(0.0, match which {
+                                    0 => Player::One,
+                                    1 => Player::Two,
+                                    _ => continue,
+                                }));
+                            },
+                            Button::DPadDown => {
+                                front_event_clump.get_mut_control().unwrap_or_else(|| panic!("Control was none")).send_to(MainToControl::Down(0.0, match which {
+                                    0 => Player::One,
+                                    1 => Player::Two,
+                                    _ => continue,
                                 }));
                             },
                             Button::A => {
                                 front_event_clump.get_mut_control().unwrap_or_else(|| panic!("Control was none")).send_to(MainToControl::Up(0.0, match which {
-                                    _ => Player::One,
+                                    0 => Player::One,
+                                    1 => Player::Two,
+                                    _ => continue,
                                 }));
                             }
                             _ => {

@@ -82,23 +82,23 @@ impl RenderSystem {
     fn render(&mut self, arg: &RunArg, mut encoder: GlEncoder) {
         use dependencies::specs::Join;
 
-        let (render_ids, transforms, mut cameras, mut render_datas) = arg.fetch(|w|
+        let (render_ids, transforms, cameras, mut render_datas) = arg.fetch(|w|
             (
                 w.read::<RenderId>(),
                 w.read::<Transform>(),
-                w.write::<Camera>(),
+                w.read::<Camera>(),
                 w.write::<RenderData>()
             )
         );
 
-        encoder.clear(&self.out_color, [1.0, 0.0, 0.0, 1.0]);
+        encoder.clear(&self.out_color, [0.0, 0.0, 0.0, 1.0]);
         encoder.clear_depth(&self.out_depth, 1.0);
 
-        let (view, proj, dirty_cam) = {
-            let mut camera = {
+        let (view, proj) = {
+            let camera = {
                 let mut camera_opt = None;
 
-                for camera in (&mut cameras).iter() {
+                for camera in (&cameras).iter() {
                     if camera.is_main() {
                         camera_opt = Some(camera);
                     }
@@ -107,15 +107,15 @@ impl RenderSystem {
                 camera_opt.unwrap_or_else(|| panic!("No Main Camera Entity"))
             };
 
-            (camera.get_view(), camera.get_proj(), camera.take_dirty())
+            (camera.get_view(), camera.get_proj())
         };
 
         let mut datas = vec!();
 
-        for (render_id, transform, mut render_data) in (&render_ids, &transforms, &mut render_datas).iter() {
+        for (render_id, transform, render_data) in (&render_ids, &transforms, &mut render_datas).iter() {
             let mut projection_data = None;
 
-            if dirty_cam || true {
+            if true {//dirty_cam || transform.take_dirty() {
                 projection_data = Some(
                     ProjectionData {
                         model: transform.get_model().into(),
@@ -127,7 +127,7 @@ impl RenderSystem {
 
             let mut texture_data = None;
 
-            if render_data.take_dirty() {
+            if true {//render_data.take_dirty() {
                 texture_data = Some(
                     TextureData {
                         tint: render_data.get_tint(),

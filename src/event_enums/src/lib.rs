@@ -1,3 +1,4 @@
+extern crate dependencies;
 extern crate graphics;
 extern crate utils;
 

@@ -8,6 +8,7 @@ pub struct Transform {
     translation: Vector3<GfxCoord>,
     rotation: Euler<Rad<GfxCoord>>,
     scale: Vector3<GfxCoord>,
+    dirty: bool,
 }
 
 impl Transform {
@@ -16,6 +17,7 @@ impl Transform {
             translation: pos,
             rotation: rotation,
             scale: scale,
+            dirty: true,
         }
     }
 
@@ -29,10 +31,12 @@ impl Transform {
 
     pub fn set_pos(&mut self, pos: Vector3<GfxCoord>) {
         self.translation = pos;
+        self.set_dirty();
     }
 
     pub fn add_pos(&mut self, pos_delta: Vector3<GfxCoord>) {
         self.translation += pos_delta;
+        self.set_dirty();
     }
 
     pub fn get_pos(&self) -> Vector3<GfxCoord> {
@@ -46,6 +50,19 @@ impl Transform {
     pub fn get_gui_offset(&self) -> Point2<Coord> {
         let translation = self.get_pos();
         Point2::new(-translation.x as Coord, -translation.y as Coord)
+    }
+
+    fn set_dirty(&mut self) {
+        self.dirty = true;
+    }
+
+    pub fn take_dirty(&mut self) -> bool {
+        if self.dirty {
+            self.dirty = false;
+            true
+        } else {
+            false
+        }
     }
 }
 

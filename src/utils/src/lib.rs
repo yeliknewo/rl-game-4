@@ -13,7 +13,7 @@ pub type GfxCoord = f32;
 // #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 // pub struct WindowId(pub u32);
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum Player {
     One,
     Two,
