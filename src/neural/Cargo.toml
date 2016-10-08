@@ -1,7 +1,7 @@
 [package]
-name = "math"
+name = "neural"
 version = "0.1.0"
-authors = ["Kiley Owen <yelikdev@gmail.com>"]
+authors = ["= <=>"]
 
 [dependencies]
 # art = { path="../art" }
@@ -14,4 +14,4 @@ dependencies = { path="../dependencies" }
 # math = { path="../math" }
 # neural = { path="../neural" }
 # systems = { path="../systems" }
-utils = { path="../utils" }
+# utils = { path="../utils" }

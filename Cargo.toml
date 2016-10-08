@@ -14,5 +14,6 @@ event = { path="src/event" }
 event_enums = { path="src/event_enums" }
 graphics = { path="src/graphics" }
 math = { path="src/math" }
+neural = { path="src/neural" }
 systems = { path="src/systems" }
 utils = { path="src/utils" }

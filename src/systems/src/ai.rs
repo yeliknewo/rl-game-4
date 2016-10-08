@@ -2,7 +2,7 @@ use dependencies::specs::{System, RunArg};
 use event::{FrontChannel, BackChannel};
 use event_enums::ai_x_control::{AiToControl, AiFromControl};
 use event_enums::feeder_x_ai::{FeederToAi, FeederFromAi};
-use utils::{Delta, Player};
+use utils::{Delta};
 
 pub struct AiSystem {
     feeder_back_channel: BackChannel<FeederToAi, FeederFromAi>,
@@ -22,13 +22,13 @@ impl AiSystem {
 
     fn process_event(&mut self, event: FeederToAi) {
         match event {
-            FeederToAi::PlayerPosition(player, position) => self.control_front_channel.send_to(AiToControl::Right(1.0, player)),
+            FeederToAi::PlayerPosition(player, _position) => self.control_front_channel.send_to(AiToControl::Right(1.0, player)),
         }
     }
 }
 
 impl System<Delta> for AiSystem {
-    fn run(&mut self, arg: RunArg, _: Delta) {
+    fn run(&mut self, arg: RunArg, _delta_time: Delta) {
 
         while let Some(event) = self.feeder_back_channel.try_recv_to() {
             self.process_event(event);
