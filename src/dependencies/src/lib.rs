@@ -8,6 +8,7 @@ pub extern crate gfx_window_sdl;
 pub extern crate glutin;
 pub extern crate image;
 pub extern crate log;
+pub extern crate rand;
 pub extern crate sdl2;
 pub extern crate specs;
 pub extern crate time;
