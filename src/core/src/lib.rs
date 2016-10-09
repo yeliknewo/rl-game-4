@@ -32,7 +32,7 @@ pub fn start() {
 
     let (mut front_event_clump, back_event_clump) = make_event_clumps();
 
-    let (width, height): (u32, u32) = (640, 480);
+    let (width, height): (u32, u32) = (640, 640);
 
     let title = "rl-game-3";
 

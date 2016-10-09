@@ -8,7 +8,8 @@ use event::{BackChannel, two_way_channel};
 use event_enums::main_x_game::{MainToGame, MainFromGame};
 use graphics::{OutColor, OutDepth, GlFactory, load_texture};
 use math::{OrthographicHelper};
-use systems::{AiSystem, FeederSystem, PlayerSystem, RenderSystem, ControlSystem, MovingSystem};
+use systems::{AiSystem, FeederSystem, PlayerSystem, RenderSystem, ControlSystem, MovingSystem, ScoreSystem};
+use systems::score::{STARTING_VELOCITY, PLAYER_TWO_START, PLAYER_ONE_START};
 use utils::{Delta, FpsCounter, Player};
 
 use event_clump::{BackEventClump};
@@ -71,25 +72,34 @@ impl Game {
         };
 
         planner.mut_world().create_now()
-            .with(CompMoving::new(Vector3::new(0.0, 0.0, 0.0)))
+            .with(CompMoving::new(STARTING_VELOCITY))
             .with(CompPlayer::new(Player::One))
-            .with(Transform::new(Vector3::new(0.0, 0.0, 0.0), Euler::new(Rad(0.0), Rad(0.0), Rad(0.0)), Vector3::new(1.0, 1.0, 1.0)))
+            .with(Transform::new(PLAYER_ONE_START, Euler::new(Rad(0.0), Rad(0.0), Rad(0.0)), Vector3::new(1.0, 1.0, 1.0)))
             .with(main_render.clone())
             .with(RenderData::new(layers::PLAYER, *main::DEFAULT_TINT, main::PLAYER_1_STAND, main::SIZE))
             .build();
 
         planner.mut_world().create_now()
-            .with(CompMoving::new(Vector3::new(0.0, 0.0, 0.0)))
+            .with(CompMoving::new(STARTING_VELOCITY))
             .with(CompPlayer::new(Player::Two))
-            .with(Transform::new(Vector3::new(0.0, 0.0, 0.0), Euler::new(Rad(0.0), Rad(0.0), Rad(0.0)), Vector3::new(1.0, 1.0, 1.0)))
+            .with(Transform::new(PLAYER_TWO_START, Euler::new(Rad(0.0), Rad(0.0), Rad(0.0)), Vector3::new(1.0, 1.0, 1.0)))
             .with(main_render.clone())
             .with(RenderData::new(layers::PLAYER, [1.0, 0.0, 0.0, 1.0], main::PLAYER_1_STAND, main::SIZE))
             .build();
 
+
+        let (score_to_feeder_front_channel, score_to_feeder_back_channel) = two_way_channel();
+
+        planner.add_system(
+            ScoreSystem::new(score_to_feeder_front_channel),
+            "score",
+            60
+        );
+
         let (feeder_to_ai_front_channel, feeder_to_ai_back_channel) = two_way_channel();
 
         planner.add_system(
-            FeederSystem::new(feeder_to_ai_front_channel),
+            FeederSystem::new(feeder_to_ai_front_channel, score_to_feeder_back_channel),
             "feeder",
             50
         );

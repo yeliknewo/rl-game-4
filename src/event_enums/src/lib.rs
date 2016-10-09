@@ -8,3 +8,4 @@ pub mod feeder_x_ai;
 pub mod main_x_control;
 pub mod main_x_game;
 pub mod main_x_render;
+pub mod score_x_feeder;

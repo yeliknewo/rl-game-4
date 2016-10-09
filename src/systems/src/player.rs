@@ -29,28 +29,28 @@ impl System<Delta> for PlayerSystem {
             match event {
                 ControlToPlayer::Right(amount, player_evt) => {
                     for(player, mut moving) in (&players, &mut movings).iter() {
-                        if *player.get_player() == player_evt {
+                        if player.get_player() == player_evt {
                             moving.get_mut_velocity().x += amount as Coord;
                         }
                     }
                 },
                 ControlToPlayer::Left(amount, player_evt) => {
                     for(player, mut moving) in (&players, &mut movings).iter() {
-                        if *player.get_player() == player_evt {
+                        if player.get_player() == player_evt {
                             moving.get_mut_velocity().x -= amount as Coord;
                         }
                     }
                 },
                 ControlToPlayer::Up(amount, player_evt) => {
                     for(player, mut moving) in (&players, &mut movings).iter() {
-                        if *player.get_player() == player_evt {
+                        if player.get_player() == player_evt {
                             moving.get_mut_velocity().y += amount as Coord;
                         }
                     }
                 },
                 ControlToPlayer::Down(amount, player_evt) => {
                     for(player, mut moving) in (&players, &mut movings).iter() {
-                        if *player.get_player() == player_evt {
+                        if player.get_player() == player_evt {
                             moving.get_mut_velocity().y -= amount as Coord;
                         }
                     }

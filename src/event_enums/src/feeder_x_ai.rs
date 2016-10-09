@@ -1,9 +1,10 @@
-use dependencies::cgmath::{Vector3};
-use utils::{Player, Coord};
+use utils::{Player};
 
 #[derive(Debug)]
 pub enum FeederToAi {
-    PlayerPosition(Player, Vector3<Coord>),
+    WorldState(Player, Vec<f64>),
+    Reward(Vec<(Player, i64)>),
+    RewardAndEnd(Vec<(Player, i64)>),
 }
 
 #[derive(Debug)]

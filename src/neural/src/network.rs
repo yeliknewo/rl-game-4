@@ -13,18 +13,20 @@ impl NeuralNetwork {
         let mut out = NeuralNetwork {
             layers: vec!(),
         };
-        out.set_weights_and_bias(weights_and_biases);
+        for layer in weights_and_biases {
+            out.layers.push(NeuralLayer::new(layer));
+        }
         out
     }
 
-    pub fn new_random(first_input_size: LayerSizeType, layer_sizes: Vec<LayerSizeType>, min_weight: f64, max_weight: f64, min_bias: f64, max_bias: f64) -> NeuralNetwork {
+    pub fn new_random(first_input_size: LayerSizeType, layer_sizes: &Vec<LayerSizeType>, min_weight: f64, max_weight: f64, min_bias: f64, max_bias: f64) -> NeuralNetwork {
         let mut layers = vec!();
 
         let mut input_size = first_input_size;
 
         for layer_size in layer_sizes {
-            layers.push(NeuralLayer::new_random(input_size, layer_size, min_weight, max_weight, min_bias, max_bias));
-            input_size = layer_size;
+            layers.push(NeuralLayer::new_random(input_size, *layer_size, min_weight, max_weight, min_bias, max_bias));
+            input_size = *layer_size;
         }
 
         NeuralNetwork {
@@ -33,8 +35,6 @@ impl NeuralNetwork {
     }
 
     pub fn fire(&self, inputs: &Vec<f64>) -> Vec<f64> {
-        assert_eq!(inputs.len(), self.layers.len());
-
         let mut input = inputs.to_vec();
 
         for layer in &self.layers {
@@ -75,7 +75,9 @@ impl NeuralLayer {
         let mut out = NeuralLayer {
             neurons: vec!(),
         };
-        out.set_weights_and_bias(weights_and_biases);
+        for neuron in weights_and_biases {
+            out.neurons.push(Neuron::new(neuron));
+        }
         out
     }
 
@@ -92,7 +94,6 @@ impl NeuralLayer {
     }
 
     fn fire(&self, inputs: &Vec<f64>) -> Vec<f64> {
-        assert_eq!(inputs.len(), self.neurons.len());
         let mut outputs = vec!();
         for neuron in &self.neurons {
             outputs.push(neuron.fire(&inputs));
@@ -124,6 +125,7 @@ impl NeuralLayer {
 
 #[derive(Debug, Clone)]
 pub struct Neuron {
+    last_weight_count: usize,
     weights: Vec<f64>,
     bias: f64,
 }
@@ -131,6 +133,7 @@ pub struct Neuron {
 impl Neuron {
     fn new(weights_and_bias: Vec<f64>) -> Neuron {
         let mut out = Neuron {
+            last_weight_count: weights_and_bias.len() - 1,
             weights: vec!(),
             bias: 0.0,
         };
@@ -143,6 +146,7 @@ impl Neuron {
 
         let mut rng = thread_rng();
 
+        // warn!("Num Inputs: {:?}", num_inputs);
         for _ in 0..num_inputs {
             weights.push(rng.gen_range(min_weight, max_weight));
         }
@@ -150,6 +154,7 @@ impl Neuron {
         let bias = rng.gen_range(min_bias, max_bias);
 
         Neuron {
+            last_weight_count: weights.len(),
             weights: weights,
             bias: bias,
         }
@@ -184,8 +189,9 @@ impl Neuron {
     }
 
     fn set_weights(&mut self, weights: Vec<f64>) {
-        assert_eq!(weights.len(), self.weights.len());
+        assert_eq!(weights.len(), self.last_weight_count);
         self.weights = weights;
+        self.last_weight_count = self.weights.len();
     }
 
     fn set_bias(&mut self, bias: f64) {

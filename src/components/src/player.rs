@@ -12,8 +12,8 @@ impl CompPlayer {
         }
     }
 
-    pub fn get_player(&self) -> &Player {
-        &self.player
+    pub fn get_player(&self) -> Player {
+        self.player
     }
 
     pub fn get_mut_player(&mut self) -> &mut Player {

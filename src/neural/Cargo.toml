@@ -4,6 +4,8 @@ version = "0.1.0"
 authors = ["= <=>"]
 
 [dependencies]
+log = "0.3.6"
+
 # art = { path="../art" }
 # components = { path="../components" }
 # core = { path="../core" }

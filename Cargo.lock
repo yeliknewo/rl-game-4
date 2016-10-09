@@ -11,6 +11,7 @@ dependencies = [
  "graphics 0.1.0",
  "log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "math 0.1.0",
+ "neural 0.1.0",
  "systems 0.1.0",
  "utils 0.1.0",
 ]
@@ -178,6 +179,7 @@ dependencies = [
  "glutin 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "image 0.10.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rand 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "sdl2 0.18.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "specs 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "time 0.1.35 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -560,6 +562,14 @@ version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "neural"
+version = "0.1.0"
+dependencies = [
+ "dependencies 0.1.0",
+ "log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "num"
 version = "0.1.36"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -815,6 +825,7 @@ dependencies = [
  "event_enums 0.1.0",
  "graphics 0.1.0",
  "log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "neural 0.1.0",
  "utils 0.1.0",
 ]
 

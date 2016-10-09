@@ -1,28 +1,29 @@
-use std::vec::Drain;
+use std::collections::{HashMap};
+use std::vec::{Drain as VecDrain};
 use dependencies::rand::{Rng, thread_rng};
 use network::{NeuralNetwork};
 
-
 pub struct EvolutionaryTrainer {
-    next_generation: Vec<NeuralNetwork>,
+    next_generation: HashMap<usize, NeuralNetwork>,
     generation: Vec<Species>,
 }
 
 impl EvolutionaryTrainer {
-    pub fn new(first_generation: Vec<NeuralNetwork>) -> EvolutionaryTrainer {
+    pub fn new(first_generation: HashMap<usize, NeuralNetwork>) -> EvolutionaryTrainer {
         EvolutionaryTrainer {
             next_generation: first_generation,
             generation: vec!(),
         }
     }
 
-    pub fn train(&mut self, mut rewards: Vec<i64>) {
+    pub fn train(&mut self, mut rewards: HashMap<usize, i64>) {
         assert_eq!(self.next_generation.len(), rewards.len());
 
-        let mut rewards_iter: Drain<i64> = rewards.drain(..);
+        let drop_count = 0;
 
-        for network in self.next_generation.drain(..) {
-            self.generation.push(Species::new(rewards_iter.next().unwrap_or_else(|| panic!("Rewards iter next was none")), network));
+        for reward in rewards.drain() {
+            // warn!("Reward Index: {:?}", reward.0);
+            self.generation.push(Species::new(reward.1, self.next_generation.remove(&reward.0).unwrap_or_else(|| panic!("Next Gen remove reward.o was none"))));
         }
 
         self.generation.sort_by_key(|species| species.get_fitness());
@@ -30,15 +31,32 @@ impl EvolutionaryTrainer {
         let first = self.generation.pop().unwrap_or_else(|| panic!("Generation pop was none"));
         let second = self.generation.pop().unwrap_or_else(|| panic!("Generation pop was none"));
 
-        for _ in 0..4 {
-            self.next_generation.push(first.cross(&second));
+        for _ in 0..drop_count {
+            let size = self.generation.len() - 1;
+            self.generation.remove(size);
         }
-        for species in &self.generation {
-            self.next_generation.push(first.cross(species));
+
+        for _ in 0..(2 + drop_count) {
+            self.add_to_next_gen(first.cross(&second));
+        }
+
+        let mut delay = vec!();
+
+        for species in self.generation.drain(..) {
+            delay.push(first.cross(&species));
+        }
+
+        for net in delay.drain(..) {
+            self.add_to_next_gen(net);
         }
     }
 
-    pub fn get_next_generation(&self) -> &Vec<NeuralNetwork> {
+    fn add_to_next_gen(&mut self, net: NeuralNetwork) {
+        let index = self.next_generation.len();
+        self.next_generation.insert(index, net);
+    }
+
+    pub fn get_next_generation(&self) -> &HashMap<usize, NeuralNetwork> {
         &self.next_generation
     }
 }
@@ -69,8 +87,8 @@ impl Species {
         let mut net_weights_2 = other.get_network().get_weights_and_bias();
         assert_eq!(net_weights_1.len(), net_weights_2.len());
 
-        let mut net_iter_1: Drain<Vec<Vec<f64>>> = net_weights_1.drain(..);
-        let mut net_iter_2: Drain<Vec<Vec<f64>>> = net_weights_2.drain(..);
+        let net_iter_1: VecDrain<Vec<Vec<f64>>> = net_weights_1.drain(..);
+        let mut net_iter_2: VecDrain<Vec<Vec<f64>>> = net_weights_2.drain(..);
 
         let mut child_net = vec!();
 
@@ -82,8 +100,8 @@ impl Species {
 
             let mut child_layer = vec!();
 
-            let mut layer_iter_1: Drain<Vec<f64>> = layer_weights_1.drain(..);
-            let mut layer_iter_2: Drain<Vec<f64>> = layer_weights_2.drain(..);
+            let layer_iter_1: VecDrain<Vec<f64>> = layer_weights_1.drain(..);
+            let mut layer_iter_2: VecDrain<Vec<f64>> = layer_weights_2.drain(..);
 
             for mut neuron_weights_1 in layer_iter_1 {
                 let mut neuron_weights_2 = layer_iter_2.next().unwrap_or_else(|| panic!("Layer iter 2 next was none"));
@@ -91,8 +109,8 @@ impl Species {
 
                 let mut child_neuron = vec!();
 
-                let mut neuron_iter_1: Drain<f64> = neuron_weights_1.drain(..);
-                let mut neuron_iter_2: Drain<f64> = neuron_weights_2.drain(..);
+                let neuron_iter_1: VecDrain<f64> = neuron_weights_1.drain(..);
+                let mut neuron_iter_2: VecDrain<f64> = neuron_weights_2.drain(..);
 
                 for weight_1 in neuron_iter_1 {
                     let weight_2 = neuron_iter_2.next().unwrap_or_else(|| panic!("Neuron iter 2 next was none"));
