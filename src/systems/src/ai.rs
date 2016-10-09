@@ -1,16 +1,14 @@
 use std::collections::{HashMap};
-use dependencies::cgmath::prelude::{MetricSpace};
-use dependencies::cgmath::{Vector3, dot};
 use dependencies::specs::{System, RunArg};
 use event::{FrontChannel, BackChannel};
 use event_enums::ai_x_control::{AiToControl, AiFromControl};
 use event_enums::feeder_x_ai::{FeederToAi, FeederFromAi};
 use neural::network::{NeuralNetwork};
 use neural::evolution::{EvolutionaryTrainer};
-use utils::{Delta, Player, Coord};
+use utils::{Delta, Player};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-enum Brain {
+pub enum Brain {
     Chase,
     Flee,
 }
@@ -19,7 +17,8 @@ struct BrainClump {
     trainer: EvolutionaryTrainer,
     player_mapper: HashMap<Player, usize>,
     used_indices: Vec<usize>,
-    rewards: Vec<HashMap<usize, i64>>,
+    rewards: Vec<(usize, i64)>,
+    players: Vec<Player>,
 }
 
 impl BrainClump {
@@ -43,6 +42,7 @@ impl BrainClump {
             player_mapper: HashMap::new(),
             used_indices: vec!(),
             rewards: vec!(),
+            players: vec!(),
         }
     }
 
@@ -75,6 +75,20 @@ impl BrainClump {
     //     count
     // }
 
+    fn add_player(&mut self, player: Player) {
+        self.players.push(player);
+        self.players.sort();
+        self.players.dedup();
+    }
+
+    fn prep_player_indices(&mut self) {
+        let players = self.players.to_vec();
+
+        for player in players {
+            self.map_next_index(player);
+        }
+    }
+
     fn map_next_index(&mut self, player: Player) {
         let indices_total = self.trainer.get_next_generation().len();
         let mut indices_used: Vec<usize> = self.player_mapper.iter().map(|value| *value.1).collect();
@@ -100,7 +114,7 @@ impl BrainClump {
         self.used_indices.sort();
     }
 
-    fn think(&mut self, player: Player, inputs: &Vec<f64>) -> AiToControl {
+    fn think(&mut self, player: Player, inputs: &mut Vec<f64>) -> AiToControl {
         // let dot1 = dot(vec[0].1, vec[1].1);
         // let dot2 = dot(vec[1].1, vec[0].1);
         //
@@ -111,13 +125,16 @@ impl BrainClump {
         let index = *self.player_mapper.get(&player).unwrap_or_else(|| panic!("Player mapper get info.0 was none"));
         let network = self.trainer.get_next_generation().get(&index).unwrap_or_else(|| panic!("Next Gen Get Index is none"));
 
+        NeuralNetwork::sigmoid_inputs(inputs);
+
         let result = network.fire(inputs);
 
+        // warn!("Power: {:?}", result[1]);
         match (result[0] * 4.0).abs().round() as i64 % 4 {
-            0 => AiToControl::Right(result[1].min(1.0), player),
-            1 => AiToControl::Left(result[1].min(1.0), player),
-            2 => AiToControl::Up(result[1].min(1.0), player),
-            3 => AiToControl::Down(result[1].min(1.0), player),
+            0 => AiToControl::Right(result[1].abs().min(1.0).max(0.0), player),
+            1 => AiToControl::Left(result[1].abs().min(1.0).max(0.0), player),
+            2 => AiToControl::Up(result[1].abs().min(1.0).max(0.0), player),
+            3 => AiToControl::Down(result[1].abs().min(1.0).max(0.0), player),
             _ => panic!("CRITICAL MATH ERROR"),
         }
 
@@ -141,30 +158,22 @@ impl BrainClump {
         // output
     }
 
-    fn prep_reward(&mut self, mut vec: Vec<(Player, i64)>) {
-        vec.sort_by_key(|value| value.0);
-
-        let mut rewards = HashMap::new();
-
-        for value in vec {
-            let index = *self.player_mapper.get(&value.0).unwrap_or_else(|| panic!("Player Mapper get Value.0 was None"));
-            rewards.insert(index, value.1);
-        }
-
-        self.rewards.push(rewards);
+    fn prep_reward(&mut self, reward: (Player, i64)) {
+        let index = *self.player_mapper.get(&reward.0).unwrap_or_else(|| panic!("Player Mapper get Value.0 was None"));
+        self.rewards.push((index, reward.1));
     }
 
-    fn reward(&mut self, vec: Vec<(Player, i64)>) {
-        warn!("Finished Game");
-        self.prep_reward(vec);
+    fn reward(&mut self, reward: (Player, i64)) {
+        // warn!("Finished Game");
+        self.prep_reward(reward);
 
+        // warn!("Used Indices: {:?}, Next Gen Len: {:?}", self.used_indices.len(), self.trainer.get_next_generation().len());
         if self.used_indices.len() == self.trainer.get_next_generation().len() {
             self.train();
         }
         self.player_mapper.clear();
         // self.print_unused_indices();
-        self.map_next_index(Player::One);
-        self.map_next_index(Player::Two);
+        self.prep_player_indices();
     }
 
     fn train(&mut self) {
@@ -172,18 +181,16 @@ impl BrainClump {
         let mut rewards: HashMap<usize, i64> = HashMap::new();
 
         for reward in self.rewards.drain(..) {
-            for value in &reward {
-                let sum = {
-                    if rewards.contains_key(value.0) {
-                        *rewards.get(value.0).unwrap()
-                    } else {
-                        rewards.insert(*value.0, 0);
-                        *rewards.get(value.0).unwrap()
-                    }
-                };
+            let sum = {
+                if rewards.contains_key(&reward.0) {
+                    *rewards.get(&reward.0).unwrap()
+                } else {
+                    rewards.insert(reward.0, 0);
+                    *rewards.get(&reward.0).unwrap()
+                }
+            };
 
-                rewards.insert(*value.0, sum + value.1);
-            }
+            rewards.insert(reward.0, sum + reward.1);
         }
         for reward in &rewards {
             warn!("Index: {:?}, Fitness: {:?}", reward.0, reward.1);
@@ -220,37 +227,56 @@ impl AiSystem {
 
         let max_bias = max_weight;
 
-        let mut networks = HashMap::new();
+        let mut brain_type = HashMap::new();
 
-        for index in 0..network_count {
-            networks.insert(index, NeuralNetwork::new_random(input_size, &network_size, min_weight, max_weight, min_bias, max_bias));
-        }
+        brain_type.insert(Brain::Chase, BrainClump::new(network_count, input_size, network_size.to_vec(), min_weight, max_weight, min_bias, max_bias));
+        brain_type.insert(Brain::Flee, BrainClump::new(network_count, input_size, network_size, min_weight, max_weight, min_bias, max_bias));
 
         let mut system = AiSystem {
             feeder_back_channel: feeder_back_channel,
             control_front_channel: control_front_channel,
-            brain_type: HashMap::new(),
+            brain_type: brain_type,
             brain_mapper: HashMap::new(),
         };
 
         system.map_player_to_brain(Player::One, Brain::Chase);
         system.map_player_to_brain(Player::Two, Brain::Flee);
 
+        system.prep_player_indices();
+
         system
+    }
+
+    fn prep_player_indices(&mut self) {
+        for brain in self.brain_type.values_mut() {
+            brain.prep_player_indices();
+        }
     }
 
     fn map_player_to_brain(&mut self, player: Player, brain: Brain) {
         self.brain_mapper.insert(player, brain);
+        self.brain_type.get_mut(&brain).unwrap_or_else(|| panic!("Brain had no type")).add_player(player);
     }
 
     fn process_event(&mut self, event: FeederToAi) {
         match event {
-            FeederToAi::WorldState(player, vec) => {
+            FeederToAi::WorldState(player, mut vec) => {
                 let brain = self.brain_mapper.get(&player).unwrap_or_else(|| panic!("Player has no brain"));
-                self.brain_type.get_mut(brain).unwrap_or_else(|| panic!("Brain had no type")).think(player, &vec);
+                let thought = self.brain_type.get_mut(brain).unwrap_or_else(|| panic!("Brain had no type")).think(player, &mut vec);
+                self.control_front_channel.send_to(thought);
             },
-            FeederToAi::Reward(vec) => self.prep_reward(vec),
-            FeederToAi::RewardAndEnd(vec) => self.reward(vec),
+            FeederToAi::Reward(vec) => {
+                for reward in &vec {
+                    let brain = self.brain_mapper.get(&reward.0).unwrap_or_else(|| panic!("Player has no brain"));
+                    self.brain_type.get_mut(brain).unwrap_or_else(|| panic!("Brain had no type")).prep_reward(*reward);
+                }
+            },
+            FeederToAi::RewardAndEnd(vec) => {
+                for reward in &vec {
+                    let brain = self.brain_mapper.get(&reward.0).unwrap_or_else(|| panic!("Player has no brain"));
+                    self.brain_type.get_mut(brain).unwrap_or_else(|| panic!("Brain had no type")).reward(*reward);
+                }
+            },
         }
     }
 }

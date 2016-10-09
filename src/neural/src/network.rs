@@ -9,6 +9,12 @@ pub struct NeuralNetwork {
 }
 
 impl NeuralNetwork {
+    pub fn sigmoid_inputs(inputs: &mut Vec<f64>) {
+        for input in inputs {
+            *input = Neuron::sigmoid(*input);
+        }
+    }
+
     pub fn new(weights_and_biases: Vec<Vec<Vec<f64>>>) -> NeuralNetwork {
         let mut out = NeuralNetwork {
             layers: vec!(),
@@ -35,13 +41,13 @@ impl NeuralNetwork {
     }
 
     pub fn fire(&self, inputs: &Vec<f64>) -> Vec<f64> {
-        let mut input = inputs.to_vec();
+        let mut inputs = inputs.to_vec();
 
         for layer in &self.layers {
-            input = layer.fire(&input);
+            inputs = layer.fire(&inputs);
         }
 
-        input
+        inputs
     }
 
     pub fn get_weights_and_bias(&self) -> Vec<Vec<Vec<f64>>> {

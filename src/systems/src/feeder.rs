@@ -1,5 +1,5 @@
 use components::{Transform, CompPlayer};
-use dependencies::cgmath::{Vector3, MetricSpace};
+use dependencies::cgmath::{Vector3, MetricSpace, dot};
 use dependencies::specs::{System, RunArg, Join};
 use event::{FrontChannel, BackChannel};
 use event_enums::feeder_x_ai::{FeederToAi, FeederFromAi};
@@ -32,7 +32,7 @@ impl System<Delta> for FeederSystem {
 
         if let Some(event) = self.score_back_channel.try_recv_to() {
             match event {
-                ScoreToFeeder::Lose(loser) => self.ai_front_channel.send_to(FeederToAi::End({
+                ScoreToFeeder::Lose(loser) => self.ai_front_channel.send_to(FeederToAi::RewardAndEnd({
                     match loser {
                         Player::One => {
                             vec!((Player::One, -1000), (Player::Two, 1000))
@@ -45,14 +45,14 @@ impl System<Delta> for FeederSystem {
             }
         }
 
-        let mut vec = vec!();
+        let mut players_and_positions = vec!();
 
         for (transform, player) in (&transforms, &players).iter() {
-            vec.push((player.get_player(), transform.get_pos()));
+            players_and_positions.push((player.get_player(), transform.get_pos()));
         }
 
-        self.ai_front_channel.send_to(FeederToAi::Reward(vec.iter().filter_map(|me| {
-            let mut other = vec.iter().filter_map(|other| {
+        self.ai_front_channel.send_to(FeederToAi::Reward(players_and_positions.iter().filter_map(|me| {
+            let mut other = players_and_positions.iter().filter_map(|other| {
                 if me.0 != other.0 && me.1 != other.1 {
                     Some(other.1)
                 } else {
@@ -60,12 +60,43 @@ impl System<Delta> for FeederSystem {
                 }
             }).collect::<Vec<Vector3<Coord>>>();
             if other.len() == 1 {
-                Some((me.0, me.1.distance(other.pop().unwrap_or_else(|| panic!("Shit Happened"))).round() as i64))
+                match me.0 {
+                    Player::One => {
+                        Some((me.0, -me.1.distance(other.pop().unwrap_or_else(|| panic!("Shit Happened"))).round() as i64))
+                    },
+                    Player::Two => {
+                        Some((me.0, me.1.distance(other.pop().unwrap_or_else(|| panic!("Shit Happened"))).round() as i64))
+                    }
+                }
             } else {
                 None
             }
         }).collect()));
 
-        self.ai_front_channel.send_to(FeederToAi::PlayerPosition(vec));
+        let players = vec!(Player::One, Player::Two);
+
+        for player in players {
+            let world_state: Vec<f64> = match player {
+                Player::One => {
+                    let p1_pos = players_and_positions[0].1;
+                    let p2_pos = players_and_positions[1].1;
+                    let dot = dot(p1_pos, p2_pos);
+                    let mag = p1_pos.distance(p2_pos);
+
+                    vec!(dot as f64, mag as f64)
+                },
+                Player::Two => {
+                    let p1_pos = players_and_positions[0].1;
+                    let p2_pos = players_and_positions[1].1;
+                    let dot = dot(p2_pos, p1_pos);
+                    let mag = p1_pos.distance(p2_pos);
+
+                    vec!(dot as f64, mag as f64)
+                },
+            };
+
+            self.ai_front_channel.send_to(FeederToAi::WorldState(player, world_state));
+        }
+
     }
 }
