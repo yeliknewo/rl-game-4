@@ -6,13 +6,13 @@ use event_enums::score_x_feeder::{ScoreToFeeder, ScoreFromFeeder};
 use utils::{Delta, Player, Coord};
 
 pub const PLAYER_ONE_START: Vector3<Coord> = Vector3 {
-    x: -1.0,
+    x: -0.001,
     y: 0.0,
     z: 0.0,
 };
 
 pub const PLAYER_TWO_START: Vector3<Coord> = Vector3 {
-    x: 1.0,
+    x: 0.001,
     y: 0.0,
     z: 0.0,
 };
@@ -53,12 +53,18 @@ impl System<Delta> for ScoreSystem {
 
         for (player, transform) in (&players, &transforms).iter() {
             let pos = transform.get_pos();
-            if pos.x.abs() > 10.0 || pos.y.abs() > 10.0 || (self.time > 30.0 && player.get_player() == Player::One) {
+            if pos.x.abs() > 10.0 || pos.y.abs() > 10.0 {
                 self.feeder_front_channel.send_to(ScoreToFeeder::Lose(player.get_player()));
                 self.time = 0.0;
                 done = true;
                 break;
             }
+        }
+
+        if self.time>= 30.0 {
+            self.feeder_front_channel.send_to(ScoreToFeeder::LoseBoth);
+            self.time = 0.0;
+            done = true;
         }
 
         if done {

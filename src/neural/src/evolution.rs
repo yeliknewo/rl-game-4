@@ -117,7 +117,7 @@ impl Species {
 
                     let mutation_mult = {
                         if rng.gen_range(0, 20) == 0 {
-                            rng.gen_range(0.5, 2.0)
+                            (rng.gen_range(0, 2) * 2 - 1) as f64 * rng.gen_range(0.5, 2.0)
                         } else {
                             1.0
                         }

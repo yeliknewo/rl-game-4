@@ -213,15 +213,15 @@ impl AiSystem {
         feeder_back_channel: BackChannel<FeederToAi, FeederFromAi>,
         control_front_channel: FrontChannel<AiToControl, AiFromControl>,
     ) -> AiSystem {
-        let network_count = 8;
+        let network_count = 16;
 
-        let input_size = 2;
+        let input_size = 7;
 
-        let network_size = vec!(5, 7, 5, 2);
+        let network_size = vec!(9, 11, 13, 11, 9, 7, 5, 2);
 
-        let min_weight = 0.1;
+        let min_weight = 0.5;
 
-        let max_weight = 0.9;
+        let max_weight = 0.51;
 
         let min_bias = min_weight;
 
@@ -229,7 +229,10 @@ impl AiSystem {
 
         let mut brain_type = HashMap::new();
 
-        brain_type.insert(Brain::Chase, BrainClump::new(network_count, input_size, network_size.to_vec(), min_weight, max_weight, min_bias, max_bias));
+        brain_type.insert(Brain::Chase, BrainClump::new(network_count, input_size, network_size, min_weight, max_weight, min_bias, max_bias));
+
+        let network_size = vec!(9, 11, 13, 11, 9, 7, 5, 2);
+
         brain_type.insert(Brain::Flee, BrainClump::new(network_count, input_size, network_size, min_weight, max_weight, min_bias, max_bias));
 
         let mut system = AiSystem {
