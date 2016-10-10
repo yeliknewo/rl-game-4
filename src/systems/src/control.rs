@@ -12,6 +12,7 @@ pub struct ControlSystem {
     ai_back_channel: BackChannel<AiToControl, AiFromControl>,
     player_front_channel: Option<FrontChannel<ControlToPlayer, ControlFromPlayer>>,
     repeat_map: HashMap<RepeatEvent, ControlToPlayer>,
+    time: f64,
 }
 
 #[derive(Debug, Hash, Eq, PartialEq)]
@@ -20,6 +21,7 @@ enum RepeatEvent {
     Down(Player),
     Left(Player),
     Right(Player),
+    Joy(Player),
 }
 
 impl ControlSystem {
@@ -33,6 +35,7 @@ impl ControlSystem {
             ai_back_channel: ai_back_channel,
             player_front_channel: Some(player_front_channel),
             repeat_map: HashMap::new(),
+            time: 0.0,
         }
     }
 
@@ -42,6 +45,7 @@ impl ControlSystem {
             MainToControl::Down(amount, player) => self.send_repeat(ControlToPlayer::Down(amount, player)),
             MainToControl::Left(amount, player) => self.send_repeat(ControlToPlayer::Left(amount, player)),
             MainToControl::Right(amount, player) => self.send_repeat(ControlToPlayer::Right(amount, player)),
+            MainToControl::Joy(x, y, player) => self.send_repeat(ControlToPlayer::Joy(x, y, player)),
         }
     }
 
@@ -51,6 +55,7 @@ impl ControlSystem {
             AiToControl::Down(amount, player) => self.send_once(ControlToPlayer::Down(amount, player)),
             AiToControl::Left(amount, player) => self.send_once(ControlToPlayer::Left(amount, player)),
             AiToControl::Right(amount, player) => self.send_once(ControlToPlayer::Right(amount, player)),
+            AiToControl::Joy(x, y, player) => self.send_once(ControlToPlayer::Joy(x, y, player)),
         }
     }
 
@@ -60,6 +65,7 @@ impl ControlSystem {
             &ControlToPlayer::Down(_, player) => self.repeat_map.insert(RepeatEvent::Down(player), event),
             &ControlToPlayer::Right(_, player) => self.repeat_map.insert(RepeatEvent::Right(player), event),
             &ControlToPlayer::Left(_, player) => self.repeat_map.insert(RepeatEvent::Left(player), event),
+            &ControlToPlayer::Joy(_, _, player) => self.repeat_map.insert(RepeatEvent::Joy(player), event),
         };
     }
 
@@ -77,7 +83,14 @@ impl ControlSystem {
 }
 
 impl System<Delta> for ControlSystem {
-    fn run(&mut self, arg: RunArg, _: Delta) {
+    fn run(&mut self, arg: RunArg, delta_time: Delta) {
+        self.time += delta_time;
+
+        if self.time >= 300.0 {
+            self.time = 0.0;
+            self.main_back_channel.send_from(MainFromControl::Save);
+        }
+
         let mut needs_fetch = (true, true);
 
         while needs_fetch.0 || needs_fetch.1 {

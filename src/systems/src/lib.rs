@@ -9,6 +9,8 @@ extern crate graphics;
 extern crate neural;
 extern crate utils;
 
+pub use dependencies::rustc_serialize;
+
 pub mod ai;
 pub mod control;
 pub mod feeder;

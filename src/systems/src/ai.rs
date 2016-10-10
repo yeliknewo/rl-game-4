@@ -1,8 +1,17 @@
+use std::env;
+use std::io::{BufWriter, BufReader};
+use std::io::prelude::{Write, Read};
+use std::path::{PathBuf};
+use std::fs::File;
+use dependencies::find_folder::{Search};
+use dependencies::getopts::{Options};
+use dependencies::rustc_serialize::{json};
 use std::collections::{HashMap};
 use dependencies::specs::{System, RunArg};
 use event::{FrontChannel, BackChannel};
 use event_enums::ai_x_control::{AiToControl, AiFromControl};
 use event_enums::feeder_x_ai::{FeederToAi, FeederFromAi};
+use event_enums::main_x_ai::{MainToAi, MainFromAi};
 use neural::network::{NeuralNetwork};
 use neural::evolution::{EvolutionaryTrainer};
 use utils::{Delta, Player};
@@ -13,6 +22,24 @@ pub enum Brain {
     Flee,
 }
 
+impl<'a> Brain {
+    fn brain_to_name(brain: Brain) -> &'a str {
+        match brain {
+            Brain::Chase => "_chase",
+            Brain::Flee => "_flee",
+        }
+    }
+
+    // fn name_to_brain(name: &str) -> Option<Brain> {
+    //     match name {
+    //         "_chase" => Some(Brain::Chase),
+    //         "_flee" => Some(Brain::Flee),
+    //         _ => None,
+    //     }
+    // }
+}
+
+#[derive(Debug, RustcEncodable, RustcDecodable)]
 struct BrainClump {
     trainer: EvolutionaryTrainer,
     player_mapper: HashMap<Player, usize>,
@@ -24,8 +51,8 @@ struct BrainClump {
 impl BrainClump {
     fn new(
         network_count: usize,
-        input_size: u8,
-        network_size: Vec<u8>,
+        input_size: u16,
+        network_size: Vec<u16>,
         min_weight: f64,
         max_weight: f64,
         min_bias: f64,
@@ -44,6 +71,90 @@ impl BrainClump {
             rewards: vec!(),
             players: vec!(),
         }
+    }
+
+    fn load(brain: Brain) -> Option<BrainClump> {
+        let load_path = match BrainClump::get_load_path(Brain::brain_to_name(brain)) {
+            Some(path) => path,
+            None => return None,
+        };
+
+        let f = match File::open(load_path) {
+            Ok(file) => file,
+            Err(_) => return None,
+        };
+
+        let mut reader = BufReader::new(f);
+
+        let mut string = String::new();
+
+        match reader.read_to_string(&mut string) {
+            Ok(_) => (),
+            Err(_) => return None,
+        }
+
+        let decoded = match json::decode(string.as_str()) {
+            Ok(decoded) => decoded,
+            Err(_) => return None,
+        };
+
+        decoded
+    }
+
+    fn get_load_path(name: &str) -> Option<PathBuf> {
+        let mut saves = Search::ParentsThenKids(5, 5).for_folder("networks").unwrap_or_else(|err| panic!("{:?}", err));
+        let args: Vec<String> = env::args().collect();
+
+        let mut opts = Options::new();
+        opts.optopt("r", "", "set file to read for starting network", "READ");
+        opts.optopt("w", "", "set file to write to for saving network", "WRITE");
+        let matches = opts.parse(&args[1..]).unwrap_or_else(|err| panic!("{:?}", err));
+
+        let mut filename = String::new();
+
+        if matches.opt_present("r") {
+            filename.push_str(matches.opt_str("r").unwrap_or_else(|| panic!("Write path not specified")).as_str());
+        } else {
+            return None;
+        }
+        filename.push_str(name);
+        filename.push_str(".network");
+        saves.push(filename);
+        Some(saves)
+    }
+
+    fn get_save_path(name: &str) -> PathBuf {
+        let mut saves = Search::ParentsThenKids(5, 5).for_folder("networks").unwrap_or_else(|err| panic!("{:?}", err));
+        let args: Vec<String> = env::args().collect();
+
+        let mut opts = Options::new();
+        opts.optopt("r", "", "set file to read for starting network", "READ");
+        opts.optopt("w", "", "set file to write to for saving network", "WRITE");
+        let matches = opts.parse(&args[1..]).unwrap_or_else(|err| panic!("{:?}", err));
+
+        let mut filename = String::new();
+
+        if matches.opt_present("w") {
+            filename.push_str(matches.opt_str("w").unwrap_or_else(|| panic!("Write path not specified")).as_str());
+        } else {
+            panic!("No save specified");
+        }
+        filename.push_str(name);
+        filename.push_str(".network");
+        saves.push(filename);
+        saves
+    }
+
+    fn save(&self, brain: Brain) {
+        let save_path = BrainClump::get_save_path(Brain::brain_to_name(brain));
+
+        let encoded = json::encode(&self).unwrap_or_else(|err| panic!("{:?}", err));
+
+        let f = File::create(save_path).unwrap_or_else(|err| panic!("{:?}", err));
+
+        let mut writer = BufWriter::new(f);
+
+        writer.write(encoded.as_bytes()).unwrap_or_else(|err| panic!("{:?}", err));
     }
 
     // fn print_unused_indices(&self) {
@@ -129,14 +240,12 @@ impl BrainClump {
 
         let result = network.fire(inputs);
 
-        // warn!("Power: {:?}", result[1]);
-        match (result[0] * 4.0).abs().round() as i64 % 4 {
-            0 => AiToControl::Right(result[1].abs().min(1.0).max(0.0), player),
-            1 => AiToControl::Left(result[1].abs().min(1.0).max(0.0), player),
-            2 => AiToControl::Up(result[1].abs().min(1.0).max(0.0), player),
-            3 => AiToControl::Down(result[1].abs().min(1.0).max(0.0), player),
-            _ => panic!("CRITICAL MATH ERROR"),
-        }
+        let x = result.get(0).unwrap_or_else(|| panic!("Panic")) * 2.0 - 1.0;
+        let y = result.get(1).unwrap_or_else(|| panic!("Panic")) * 2.0 - 1.0;
+
+        let atan = y.atan2(x);
+
+        AiToControl::Joy(atan.cos(), atan.sin(), player)
 
         // for info in inputs {
         //     let index = *self.player_mapper.get(&player).unwrap_or_else(|| panic!("Player mapper get info.0 was none"));
@@ -202,26 +311,28 @@ impl BrainClump {
 }
 
 pub struct AiSystem {
+    main_back_channel: BackChannel<MainToAi, MainFromAi>,
     feeder_back_channel: BackChannel<FeederToAi, FeederFromAi>,
     control_front_channel: FrontChannel<AiToControl, AiFromControl>,
     brain_type: HashMap<Brain, BrainClump>,
     brain_mapper: HashMap<Player, Brain>,
 }
 
-impl AiSystem {
+impl<'a, 'b> AiSystem {
     pub fn new(
+        main_back_channel: BackChannel<MainToAi, MainFromAi>,
         feeder_back_channel: BackChannel<FeederToAi, FeederFromAi>,
         control_front_channel: FrontChannel<AiToControl, AiFromControl>,
     ) -> AiSystem {
         let network_count = 16;
 
-        let input_size = 7;
+        let input_size = 4;
 
-        let network_size = vec!(9, 11, 13, 11, 9, 7, 5, 2);
+        let network_size = vec!(4, 7, 9, 20, 9, 7, 5, 2);
 
-        let min_weight = 0.5;
+        let min_weight = -1.0;
 
-        let max_weight = 0.51;
+        let max_weight = 1.0;
 
         let min_bias = min_weight;
 
@@ -229,13 +340,12 @@ impl AiSystem {
 
         let mut brain_type = HashMap::new();
 
-        brain_type.insert(Brain::Chase, BrainClump::new(network_count, input_size, network_size, min_weight, max_weight, min_bias, max_bias));
-
-        let network_size = vec!(9, 11, 13, 11, 9, 7, 5, 2);
-
-        brain_type.insert(Brain::Flee, BrainClump::new(network_count, input_size, network_size, min_weight, max_weight, min_bias, max_bias));
+        brain_type.insert(Brain::Chase, BrainClump::load(Brain::Chase).unwrap_or(BrainClump::new(network_count, input_size, network_size, min_weight, max_weight, min_bias, max_bias)));
+        let network_size = vec!(4, 7, 5, 2);
+        brain_type.insert(Brain::Flee, BrainClump::load(Brain::Flee).unwrap_or(BrainClump::new(network_count, input_size, network_size, min_weight, max_weight, min_bias, max_bias)));
 
         let mut system = AiSystem {
+            main_back_channel: main_back_channel,
             feeder_back_channel: feeder_back_channel,
             control_front_channel: control_front_channel,
             brain_type: brain_type,
@@ -264,31 +374,55 @@ impl AiSystem {
     fn process_event(&mut self, event: FeederToAi) {
         match event {
             FeederToAi::WorldState(player, mut vec) => {
-                let brain = self.brain_mapper.get(&player).unwrap_or_else(|| panic!("Player has no brain"));
+                let brain = match self.brain_mapper.get(&player) {
+                    Some(brain) => brain,
+                    None => return,
+                };
                 let thought = self.brain_type.get_mut(brain).unwrap_or_else(|| panic!("Brain had no type")).think(player, &mut vec);
                 self.control_front_channel.send_to(thought);
             },
             FeederToAi::Reward(vec) => {
                 for reward in &vec {
-                    let brain = self.brain_mapper.get(&reward.0).unwrap_or_else(|| panic!("Player has no brain"));
+                    let brain = match self.brain_mapper.get(&reward.0) {
+                        Some(brain) => brain,
+                        None => continue,
+                    };
                     self.brain_type.get_mut(brain).unwrap_or_else(|| panic!("Brain had no type")).prep_reward(*reward);
                 }
             },
             FeederToAi::RewardAndEnd(vec) => {
                 for reward in &vec {
-                    let brain = self.brain_mapper.get(&reward.0).unwrap_or_else(|| panic!("Player has no brain"));
+                    let brain = match self.brain_mapper.get(&reward.0) {
+                        Some(brain) => brain,
+                        None => continue,
+                    };
                     self.brain_type.get_mut(brain).unwrap_or_else(|| panic!("Brain had no type")).reward(*reward);
                 }
             },
         }
     }
+
+    fn save(&self) {
+        for brain in &self.brain_type {
+            brain.1.save(*brain.0);
+        }
+    }
 }
 
-impl System<Delta> for AiSystem {
+impl<'a, 'b> System<Delta> for AiSystem {
     fn run(&mut self, arg: RunArg, _delta_time: Delta) {
 
         while let Some(event) = self.feeder_back_channel.try_recv_to() {
             self.process_event(event);
+        }
+
+        if let Some(event) = self.main_back_channel.try_recv_to() {
+            match event {
+                MainToAi::Save => {
+                    self.save();
+                    self.main_back_channel.send_from(MainFromAi::Saved);
+                },
+            }
         }
 
         arg.fetch(|_| ());

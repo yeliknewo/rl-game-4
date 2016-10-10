@@ -9,7 +9,7 @@ use event_enums::main_x_game::{MainToGame, MainFromGame};
 use graphics::{OutColor, OutDepth, GlFactory, load_texture};
 use math::{OrthographicHelper};
 use systems::{AiSystem, FeederSystem, PlayerSystem, RenderSystem, ControlSystem, MovingSystem, ScoreSystem};
-use systems::score::{STARTING_VELOCITY, PLAYER_TWO_START, PLAYER_ONE_START};
+use systems::score::{STARTING_VELOCITY};
 use utils::{Delta, FpsCounter, Player};
 
 use event_clump::{BackEventClump};
@@ -74,7 +74,7 @@ impl Game {
         planner.mut_world().create_now()
             .with(CompMoving::new(STARTING_VELOCITY))
             .with(CompPlayer::new(Player::One))
-            .with(Transform::new(PLAYER_ONE_START, Euler::new(Rad(0.0), Rad(0.0), Rad(0.0)), Vector3::new(1.0, 1.0, 1.0)))
+            .with(Transform::new(Vector3::new(0.0, 0.0, 0.0), Euler::new(Rad(0.0), Rad(0.0), Rad(0.0)), Vector3::new(1.0, 1.0, 1.0)))
             .with(main_render.clone())
             .with(RenderData::new(layers::PLAYER, *main::DEFAULT_TINT, main::PLAYER_1_STAND, main::SIZE))
             .build();
@@ -82,7 +82,7 @@ impl Game {
         planner.mut_world().create_now()
             .with(CompMoving::new(STARTING_VELOCITY))
             .with(CompPlayer::new(Player::Two))
-            .with(Transform::new(PLAYER_TWO_START, Euler::new(Rad(0.0), Rad(0.0), Rad(0.0)), Vector3::new(1.0, 1.0, 1.0)))
+            .with(Transform::new(Vector3::new(0.0, 0.0, 0.0), Euler::new(Rad(0.0), Rad(0.0), Rad(0.0)), Vector3::new(1.0, 1.0, 1.0)))
             .with(main_render.clone())
             .with(RenderData::new(layers::PLAYER, [1.0, 0.0, 0.0, 1.0], main::PLAYER_1_STAND, main::SIZE))
             .build();
@@ -107,7 +107,11 @@ impl Game {
         let (ai_to_control_front_channel, ai_to_control_back_channel) = two_way_channel();
 
         planner.add_system(
-            AiSystem::new(feeder_to_ai_back_channel, ai_to_control_front_channel),
+            AiSystem::new(
+                back_event_clump.take_ai().unwrap_or_else(|| panic!("Ai was none")),
+                feeder_to_ai_back_channel,
+                ai_to_control_front_channel
+            ),
             "ai",
             40
         );

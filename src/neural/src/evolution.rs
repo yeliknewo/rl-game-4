@@ -3,6 +3,7 @@ use std::vec::{Drain as VecDrain};
 use dependencies::rand::{Rng, thread_rng};
 use network::{NeuralNetwork};
 
+#[derive(Debug, Clone, RustcEncodable, RustcDecodable)]
 pub struct EvolutionaryTrainer {
     next_generation: HashMap<usize, NeuralNetwork>,
     generation: Vec<Species>,
@@ -19,7 +20,7 @@ impl EvolutionaryTrainer {
     pub fn train(&mut self, mut rewards: HashMap<usize, i64>) {
         assert_eq!(self.next_generation.len(), rewards.len());
 
-        let drop_count = 0;
+        let drop_count = 4;
 
         for reward in rewards.drain() {
             // warn!("Reward Index: {:?}", reward.0);
@@ -61,6 +62,7 @@ impl EvolutionaryTrainer {
     }
 }
 
+#[derive(Debug, Clone, RustcEncodable, RustcDecodable)]
 struct Species {
     fitness: i64,
     network: NeuralNetwork,
@@ -117,13 +119,21 @@ impl Species {
 
                     let mutation_mult = {
                         if rng.gen_range(0, 20) == 0 {
-                            (rng.gen_range(0, 2) * 2 - 1) as f64 * rng.gen_range(0.5, 2.0)
+                            rng.choose(&vec!(-1.0, 1.0)).unwrap_or_else(|| panic!("FUCK YOU")) * rng.gen_range(0.5, 2.0)
                         } else {
                             1.0
                         }
                     };
 
-                    child_neuron.push(*rng.choose(&[weight_1, weight_2]).unwrap_or_else(|| panic!("Not fucking possible")) * mutation_mult);
+                    let mutation_add = {
+                        if rng.gen_range(0, 20) == 0 {
+                            rng.gen_range(-0.2, 0.2)
+                        } else {
+                            0.0
+                        }
+                    };
+
+                    child_neuron.push(*rng.choose(&[weight_1, weight_2]).unwrap_or_else(|| panic!("Not fucking possible")) * mutation_mult + mutation_add);
                 }
 
                 child_layer.push(child_neuron);

@@ -1,5 +1,8 @@
+extern crate dependencies;
 #[macro_use]
 extern crate log;
+
+pub use dependencies::rustc_serialize;
 
 pub mod fps_counter;
 
@@ -13,7 +16,7 @@ pub type GfxCoord = f32;
 // #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 // pub struct WindowId(pub u32);
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd, RustcEncodable, RustcDecodable)]
 pub enum Player {
     One,
     Two,

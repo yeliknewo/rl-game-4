@@ -173,9 +173,15 @@ impl RenderSystem {
 
 impl System<Delta> for RenderSystem {
     fn run(&mut self, arg: RunArg, _: Delta) {
-        let mut event = self.back_channel.recv_to();
-        while self.process_event(&arg, event) {
-            event = self.back_channel.recv_to();
+        let mut event = self.back_channel.try_recv_to();
+        while self.process_event(&arg, match event {
+            Some(event) => event,
+            None => {
+                arg.fetch(|_| {});
+                return;
+            }
+        }) {
+            event = self.back_channel.try_recv_to();
         }
     }
 }

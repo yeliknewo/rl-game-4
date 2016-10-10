@@ -18,6 +18,8 @@ mod handle_events;
 use std::thread;
 
 use dependencies::gfx::{Device};
+use event_enums::main_x_ai::{MainToAi, MainFromAi};
+use event_enums::main_x_control::{MainFromControl};
 use event_enums::main_x_render::{MainToRender, MainFromRender};
 use event_enums::main_x_game::{MainToGame};
 use graphics::{GlEncoder};
@@ -99,7 +101,12 @@ pub fn start() {
 
         if let Some(event) = front_event_clump.get_mut_control().unwrap_or_else(|| panic!("Control was none")).try_recv_from() {
             match event {
-
+                MainFromControl::Save => {
+                    front_event_clump.get_mut_ai().unwrap_or_else(|| panic!("Ai was none")).send_to(MainToAi::Save);
+                    match front_event_clump.get_mut_ai().unwrap_or_else(|| panic!("Ai was none")).recv_from() {
+                        MainFromAi::Saved => (),
+                    };
+                },
             }
         }
 
@@ -110,6 +117,12 @@ pub fn start() {
         }
     }
 
+    front_event_clump.get_mut_ai().unwrap_or_else(|| panic!("Ai was none")).send_to(MainToAi::Save);
+    match front_event_clump.get_mut_ai().unwrap_or_else(|| panic!("Ai was none")).recv_from() {
+        MainFromAi::Saved => {
+            warn!("Saved Neurons");
+        },
+    }
     front_event_clump.get_mut_game().unwrap_or_else(|| panic!("Game was none")).send_to(MainToGame::Exit);
 
     game_handle.join().unwrap_or_else(|err| panic!("Error: {:?}", err));
