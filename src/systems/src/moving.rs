@@ -2,7 +2,7 @@ use components::{Transform, CompMoving};
 use dependencies::specs::{System, RunArg, Join};
 use utils::{Delta, Coord};
 
-const FRICTION: f32 = 0.99;
+const FRICTION: f32 = 1.0;
 
 pub struct MovingSystem {
 

@@ -1,7 +1,7 @@
 use dependencies::rand::{Rng, thread_rng};
 use std::vec::Drain;
 
-pub type LayerSizeType = u8;
+pub type LayerSizeType = u16;
 
 #[derive(Debug, Clone)]
 pub struct NeuralNetwork {
@@ -167,7 +167,7 @@ impl Neuron {
     }
 
     fn sigmoid(input: f64) -> f64 {
-        1.0 / (1.0 + -input.exp())
+        1.0 / (1.0 + (-input).exp())
     }
 
     fn fire(&self, inputs: &Vec<f64>) -> f64 {

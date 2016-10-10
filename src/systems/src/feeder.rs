@@ -1,10 +1,12 @@
 use components::{Transform, CompPlayer, CompMoving};
-use dependencies::cgmath::{Vector3, MetricSpace, dot};
+use dependencies::cgmath::{Vector3, MetricSpace};
 use dependencies::specs::{System, RunArg, Join};
 use event::{FrontChannel, BackChannel};
 use event_enums::feeder_x_ai::{FeederToAi, FeederFromAi};
 use event_enums::score_x_feeder::{ScoreToFeeder, ScoreFromFeeder};
 use utils::{Delta, Coord, Player};
+
+const DISTANCE_WEIGHT: i64 = 200;
 
 pub struct FeederSystem {
     ai_front_channel: FrontChannel<FeederToAi, FeederFromAi>,
@@ -37,19 +39,25 @@ impl System<Delta> for FeederSystem {
 
         if let Some(event) = self.score_back_channel.try_recv_to() {
             match event {
-                ScoreToFeeder::Lose(loser) => self.ai_front_channel.send_to(FeederToAi::RewardAndEnd({
-                    match loser {
-                        Player::One => {
-                            vec!((Player::One, -10000), (Player::Two, 10000))
-                        },
-                        Player::Two => {
-                            vec!((Player::One, 10000), (Player::Two, -10000))
-                        },
-                    }
-                })),
-                ScoreToFeeder::LoseBoth => self.ai_front_channel.send_to(FeederToAi::RewardAndEnd({
-                    vec!((Player::One, -10000), (Player::Two, -10000))
-                })),
+                ScoreToFeeder::Lose(loser, winner_delta_time) => {
+                    self.ai_front_channel.send_to(FeederToAi::RewardAndEnd({
+                        match loser {
+                            Player::One => {
+                                vec!((Player::One, (self.time * 10000.0) as i64 - 1000000), (Player::Two, ((self.time + winner_delta_time) * 10000.0) as i64))
+                            },
+                            Player::Two => {
+                                vec!((Player::One, ((self.time + winner_delta_time) * 10000.0) as i64), (Player::Two, (self.time * 10000.0) as i64 - 1000000))
+                            },
+                        }
+                    }));
+                    self.time = 0.0;
+                },
+                ScoreToFeeder::LoseBoth => {
+                    self.ai_front_channel.send_to(FeederToAi::RewardAndEnd({
+                        vec!((Player::One, (-self.time * 10000.0) as i64), (Player::Two, (-self.time * 10000.0) as i64))
+                    }));
+                    self.time = 0.0;
+                },
             }
         }
 
@@ -70,10 +78,10 @@ impl System<Delta> for FeederSystem {
             if other.len() == 1 {
                 match me.0 {
                     Player::One => {
-                        Some((me.0, 25 - me.1.distance(Vector3::new(0.0, 0.0, 0.0)).round() as i64))
+                        Some((me.0, -me.1.distance(other[0]) as i64 * DISTANCE_WEIGHT))
                     },
                     Player::Two => {
-                        Some((me.0, 25 - me.1.distance(Vector3::new(0.0, 0.0, 0.0)).round() as i64))
+                        Some((me.0, me.1.distance(other[0]) as i64 * DISTANCE_WEIGHT))
                     }
                 }
             } else {
@@ -83,36 +91,23 @@ impl System<Delta> for FeederSystem {
 
         let players = vec!(Player::One, Player::Two);
 
-        let center = Vector3::new(0.0, 0.0, 0.0);
-
         for player in players {
             let world_state: Vec<f64> = match player {
                 Player::One => {
                     let p1_pos = player_data[0].1;
                     let p2_pos = player_data[1].1;
-                    let vel = player_data[0].2;
-                    let dot1 = dot(p1_pos, p2_pos);
-                    let mag = p1_pos.distance(p2_pos);
-                    let dot2 = dot(p1_pos, center);
-                    let mag2 = p1_pos.distance(center);
 
-                    vec!(dot1 as f64, mag as f64, dot2 as f64, mag2 as f64, vel.x as f64, vel.y as f64, self.time)
+                    vec!(p1_pos.x as f64, p1_pos.y as f64, (p2_pos.x - p1_pos.x) as f64, (p2_pos.y - p1_pos.y) as f64)//)dot1 as f64, mag as f64, dot2 as f64, mag2 as f64, vel.x as f64, vel.y as f64, self.time)
                 },
                 Player::Two => {
                     let p1_pos = player_data[0].1;
                     let p2_pos = player_data[1].1;
-                    let vel = player_data[1].2;
-                    let dot1 = dot(p2_pos, p1_pos);
-                    let mag = p1_pos.distance(p2_pos);
-                    let dot2 = dot(p2_pos, center);
-                    let mag2 = p2_pos.distance(center);
 
-                    vec!(dot1 as f64, mag as f64, dot2 as f64, mag2 as f64, vel.x as f64, vel.y as f64, self.time)
+                    vec!(p2_pos.x as f64, p2_pos.y as f64, (p1_pos.x - p2_pos.x) as f64, (p1_pos.y - p2_pos.y) as f64)//dot1 as f64, mag as f64, dot2 as f64, mag2 as f64, vel.x as f64, vel.y as f64, self.time)
                 },
             };
 
             self.ai_front_channel.send_to(FeederToAi::WorldState(player, world_state));
         }
-
     }
 }

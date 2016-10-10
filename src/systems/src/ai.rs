@@ -24,8 +24,8 @@ struct BrainClump {
 impl BrainClump {
     fn new(
         network_count: usize,
-        input_size: u8,
-        network_size: Vec<u8>,
+        input_size: u16,
+        network_size: Vec<u16>,
         min_weight: f64,
         max_weight: f64,
         min_bias: f64,
@@ -129,14 +129,12 @@ impl BrainClump {
 
         let result = network.fire(inputs);
 
-        // warn!("Power: {:?}", result[1]);
-        match (result[0] * 4.0).abs().round() as i64 % 4 {
-            0 => AiToControl::Right(result[1].abs().min(1.0).max(0.0), player),
-            1 => AiToControl::Left(result[1].abs().min(1.0).max(0.0), player),
-            2 => AiToControl::Up(result[1].abs().min(1.0).max(0.0), player),
-            3 => AiToControl::Down(result[1].abs().min(1.0).max(0.0), player),
-            _ => panic!("CRITICAL MATH ERROR"),
-        }
+        let x = result.get(0).unwrap_or_else(|| panic!("Panic")) * 2.0 - 1.0;
+        let y = result.get(1).unwrap_or_else(|| panic!("Panic")) * 2.0 - 1.0;
+
+        let atan = y.atan2(x);
+
+        AiToControl::Joy(atan.cos(), atan.sin(), player)
 
         // for info in inputs {
         //     let index = *self.player_mapper.get(&player).unwrap_or_else(|| panic!("Player mapper get info.0 was none"));
@@ -215,13 +213,13 @@ impl AiSystem {
     ) -> AiSystem {
         let network_count = 16;
 
-        let input_size = 7;
+        let input_size = 4;
 
-        let network_size = vec!(9, 11, 13, 11, 9, 7, 5, 2);
+        let network_size = vec!(4, 7, 9, 20, 9, 7, 5, 2);
 
-        let min_weight = 0.5;
+        let min_weight = -1.0;
 
-        let max_weight = 0.51;
+        let max_weight = 1.0;
 
         let min_bias = min_weight;
 
@@ -231,7 +229,7 @@ impl AiSystem {
 
         brain_type.insert(Brain::Chase, BrainClump::new(network_count, input_size, network_size, min_weight, max_weight, min_bias, max_bias));
 
-        let network_size = vec!(9, 11, 13, 11, 9, 7, 5, 2);
+        let network_size = vec!(4, 7, 5, 2);
 
         brain_type.insert(Brain::Flee, BrainClump::new(network_count, input_size, network_size, min_weight, max_weight, min_bias, max_bias));
 
@@ -264,19 +262,28 @@ impl AiSystem {
     fn process_event(&mut self, event: FeederToAi) {
         match event {
             FeederToAi::WorldState(player, mut vec) => {
-                let brain = self.brain_mapper.get(&player).unwrap_or_else(|| panic!("Player has no brain"));
+                let brain = match self.brain_mapper.get(&player) {
+                    Some(brain) => brain,
+                    None => return,
+                };
                 let thought = self.brain_type.get_mut(brain).unwrap_or_else(|| panic!("Brain had no type")).think(player, &mut vec);
                 self.control_front_channel.send_to(thought);
             },
             FeederToAi::Reward(vec) => {
                 for reward in &vec {
-                    let brain = self.brain_mapper.get(&reward.0).unwrap_or_else(|| panic!("Player has no brain"));
+                    let brain = match self.brain_mapper.get(&reward.0) {
+                        Some(brain) => brain,
+                        None => continue,
+                    };
                     self.brain_type.get_mut(brain).unwrap_or_else(|| panic!("Brain had no type")).prep_reward(*reward);
                 }
             },
             FeederToAi::RewardAndEnd(vec) => {
                 for reward in &vec {
-                    let brain = self.brain_mapper.get(&reward.0).unwrap_or_else(|| panic!("Player has no brain"));
+                    let brain = match self.brain_mapper.get(&reward.0) {
+                        Some(brain) => brain,
+                        None => continue,
+                    };
                     self.brain_type.get_mut(brain).unwrap_or_else(|| panic!("Brain had no type")).reward(*reward);
                 }
             },

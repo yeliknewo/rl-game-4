@@ -4,6 +4,8 @@ use event::{BackChannel};
 use event_enums::control_x_player::{ControlToPlayer, ControlFromPlayer};
 use utils::{Delta, Coord};
 
+const SPEED: Coord = 5.0;
+
 pub struct PlayerSystem {
     control_back_channel: BackChannel<ControlToPlayer, ControlFromPlayer>,
 }
@@ -52,6 +54,18 @@ impl System<Delta> for PlayerSystem {
                     for(player, mut moving) in (&players, &mut movings).iter() {
                         if player.get_player() == player_evt {
                             moving.get_mut_velocity().y -= amount as Coord;
+                        }
+                    }
+                },
+                ControlToPlayer::Joy(x, y, player_evt) => {
+                    for(player, mut moving) in (&players, &mut movings).iter() {
+                        if player.get_player() == player_evt {
+                            moving.get_mut_velocity().x = {
+                                x as Coord * SPEED
+                            };
+                            moving.get_mut_velocity().y = {
+                                y as Coord * SPEED
+                            };
                         }
                     }
                 },

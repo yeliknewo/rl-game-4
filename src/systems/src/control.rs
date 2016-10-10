@@ -20,6 +20,7 @@ enum RepeatEvent {
     Down(Player),
     Left(Player),
     Right(Player),
+    Joy(Player),
 }
 
 impl ControlSystem {
@@ -42,6 +43,7 @@ impl ControlSystem {
             MainToControl::Down(amount, player) => self.send_repeat(ControlToPlayer::Down(amount, player)),
             MainToControl::Left(amount, player) => self.send_repeat(ControlToPlayer::Left(amount, player)),
             MainToControl::Right(amount, player) => self.send_repeat(ControlToPlayer::Right(amount, player)),
+            MainToControl::Joy(x, y, player) => self.send_repeat(ControlToPlayer::Joy(x, y, player)),
         }
     }
 
@@ -51,6 +53,7 @@ impl ControlSystem {
             AiToControl::Down(amount, player) => self.send_once(ControlToPlayer::Down(amount, player)),
             AiToControl::Left(amount, player) => self.send_once(ControlToPlayer::Left(amount, player)),
             AiToControl::Right(amount, player) => self.send_once(ControlToPlayer::Right(amount, player)),
+            AiToControl::Joy(x, y, player) => self.send_once(ControlToPlayer::Joy(x, y, player)),
         }
     }
 
@@ -60,6 +63,7 @@ impl ControlSystem {
             &ControlToPlayer::Down(_, player) => self.repeat_map.insert(RepeatEvent::Down(player), event),
             &ControlToPlayer::Right(_, player) => self.repeat_map.insert(RepeatEvent::Right(player), event),
             &ControlToPlayer::Left(_, player) => self.repeat_map.insert(RepeatEvent::Left(player), event),
+            &ControlToPlayer::Joy(_, _, player) => self.repeat_map.insert(RepeatEvent::Joy(player), event),
         };
     }
 
