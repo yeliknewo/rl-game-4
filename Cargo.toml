@@ -1,5 +1,5 @@
 [package]
-name = "rl-game-3"
+name = "rl-game-4"
 version = "0.1.0"
 authors = ["Kiley Owen <yelikdev@gmail.com>"]
 
@@ -14,6 +14,5 @@ event = { path="src/event" }
 event_enums = { path="src/event_enums" }
 graphics = { path="src/graphics" }
 math = { path="src/math" }
-neural = { path="src/neural" }
 systems = { path="src/systems" }
 utils = { path="src/utils" }

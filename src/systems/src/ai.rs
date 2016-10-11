@@ -3,6 +3,8 @@ use std::io::{BufWriter, BufReader};
 use std::io::prelude::{Write, Read};
 use std::path::{PathBuf};
 use std::fs::File;
+use dependencies::neural::network::{NeuralNetwork};
+use dependencies::neural::evolution::{EvolutionaryTrainer};
 use dependencies::find_folder::{Search};
 use dependencies::getopts::{Options};
 use dependencies::rustc_serialize::{json};
@@ -12,8 +14,6 @@ use event::{FrontChannel, BackChannel};
 use event_enums::ai_x_control::{AiToControl, AiFromControl};
 use event_enums::feeder_x_ai::{FeederToAi, FeederFromAi};
 use event_enums::main_x_ai::{MainToAi, MainFromAi};
-use neural::network::{NeuralNetwork};
-use neural::evolution::{EvolutionaryTrainer};
 use utils::{Delta, Player};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -123,7 +123,7 @@ impl BrainClump {
         Some(saves)
     }
 
-    fn get_save_path(name: &str) -> PathBuf {
+    fn get_save_path(name: &str) -> Option<PathBuf> {
         let mut saves = Search::ParentsThenKids(5, 5).for_folder("networks").unwrap_or_else(|err| panic!("{:?}", err));
         let args: Vec<String> = env::args().collect();
 
@@ -137,18 +137,27 @@ impl BrainClump {
         if matches.opt_present("w") {
             filename.push_str(matches.opt_str("w").unwrap_or_else(|| panic!("Write path not specified")).as_str());
         } else {
-            panic!("No save specified");
+            return None;
         }
         filename.push_str(name);
         filename.push_str(".network");
         saves.push(filename);
-        saves
+        Some(saves)
     }
 
     fn save(&self, brain: Brain) {
-        let save_path = BrainClump::get_save_path(Brain::brain_to_name(brain));
+        let save_path = match BrainClump::get_save_path(Brain::brain_to_name(brain)) {
+            Some(path) => path,
+            None => return,
+        };
 
-        let encoded = json::encode(&self).unwrap_or_else(|err| panic!("{:?}", err));
+        let encoded = match json::encode(&self) {
+            Ok(encoded) => encoded,
+            Err(err) => {
+                error!("Unable to Encode to save: {:?}", err);
+                return;
+            },
+        };
 
         let f = File::create(save_path).unwrap_or_else(|err| panic!("{:?}", err));
 

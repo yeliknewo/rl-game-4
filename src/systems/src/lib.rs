@@ -6,7 +6,6 @@ extern crate dependencies;
 extern crate event;
 extern crate event_enums;
 extern crate graphics;
-extern crate neural;
 extern crate utils;
 
 pub use dependencies::rustc_serialize;

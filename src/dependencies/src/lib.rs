@@ -14,3 +14,5 @@ pub extern crate rustc_serialize;
 pub extern crate sdl2;
 pub extern crate specs;
 pub extern crate time;
+
+pub extern crate neural;
